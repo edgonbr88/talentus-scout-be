@@ -40,12 +40,21 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
     }
 
-    @ExceptionHandler(AuthenticationException.class)
-    public ResponseEntity<Map<String, Object>> handleAuthenticationException(AuthenticationException ex) {
+    @ExceptionHandler(com.talentus.scout.exception.ResourceNotFoundException.class)
+    public ResponseEntity<Map<String, Object>> handleResourceNotFound(com.talentus.scout.exception.ResourceNotFoundException ex) {
         Map<String, Object> body = new HashMap<>();
-        body.put("error", "UNAUTHORIZED");
-        body.put("message", "Credenciales inválidas");
+        body.put("error", "NOT_FOUND");
+        body.put("message", ex.getMessage());
         body.put("timestamp", Instant.now().toString());
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(body);
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(body);
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<Map<String, Object>> handleIllegalArgument(IllegalArgumentException ex) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("error", "BAD_REQUEST");
+        body.put("message", ex.getMessage());
+        body.put("timestamp", Instant.now().toString());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
     }
 }

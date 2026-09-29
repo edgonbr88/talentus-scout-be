@@ -104,4 +104,14 @@ public class AuthController {
 
         return ResponseEntity.ok(response);
     }
+
+    @ExceptionHandler(org.springframework.security.core.AuthenticationException.class)
+    public ResponseEntity<java.util.Map<String, String>> handleAuthenticationException(org.springframework.security.core.AuthenticationException ex) {
+        return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED).body(
+                java.util.Map.of(
+                        "error", "UNAUTHORIZED",
+                        "message", "Credenciales inválidas"
+                )
+        );
+    }
 }
