@@ -4,10 +4,11 @@ import com.talentus.scout.config.JwtProperties;
 import com.talentus.scout.domain.entity.User;
 import com.talentus.scout.repository.UserRepository;
 import com.talentus.scout.security.JwtService;
-import com.talentus.scout.web.dto.AuthResponse;
-import com.talentus.scout.web.dto.LoginRequest;
-import com.talentus.scout.web.dto.UserProfileResponse;
+import com.talentus.scout.service.AuthService;
+import com.talentus.scout.web.dto.*;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -24,17 +25,20 @@ public class AuthController {
     private final UserRepository userRepository;
     private final JwtService jwtService;
     private final JwtProperties jwtProperties;
+    private final AuthService authService;
 
     public AuthController(
             AuthenticationManager authenticationManager,
             UserRepository userRepository,
             JwtService jwtService,
-            JwtProperties jwtProperties
+            JwtProperties jwtProperties,
+            AuthService authService
     ) {
         this.authenticationManager = authenticationManager;
         this.userRepository = userRepository;
         this.jwtService = jwtService;
         this.jwtProperties = jwtProperties;
+        this.authService = authService;
     }
 
     @PostMapping("/login")
@@ -61,6 +65,27 @@ public class AuthController {
         return ResponseEntity.ok(response);
     }
 
+    @PostMapping("/register-tutor")
+    public ResponseEntity<RegisterTutorResponse> registerTutor(
+            @Valid @RequestBody RegisterTutorRequest request,
+            HttpServletRequest httpRequest
+    ) {
+        String clientIp = httpRequest.getHeader("X-Forwarded-For");
+        if (clientIp != null && !clientIp.isBlank()) {
+            clientIp = clientIp.split(",")[0].trim();
+        } else {
+            clientIp = httpRequest.getRemoteAddr();
+        }
+
+        String userAgent = httpRequest.getHeader("User-Agent");
+        if (userAgent == null || userAgent.isBlank()) {
+            userAgent = "UNKNOWN";
+        }
+
+        RegisterTutorResponse response = authService.registerTutor(request, clientIp, userAgent);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
     @GetMapping("/me")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<UserProfileResponse> getCurrentUser(Authentication authentication) {
@@ -78,15 +103,5 @@ public class AuthController {
         );
 
         return ResponseEntity.ok(response);
-    }
-
-    @ExceptionHandler(org.springframework.security.core.AuthenticationException.class)
-    public ResponseEntity<java.util.Map<String, String>> handleAuthenticationException(org.springframework.security.core.AuthenticationException ex) {
-        return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED).body(
-                java.util.Map.of(
-                        "error", "UNAUTHORIZED",
-                        "message", "Credenciales inválidas"
-                )
-        );
     }
 }
