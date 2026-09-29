@@ -1,0 +1,26 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: talentus-scout-be
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:talentus_scout_dev}?sslmode=disable
+    username: ${DB_USER:postgres}
+    password: ${DB_PWD:postgrespassword2026}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        format_sql: true
+        jdbc:
+          lob:
+            non_contextual_creation: true
+
+security:
+  jwt:
+    secret-key: ${JWT_SECRET_KEY:super_secret_jwt_key_local_64_chars_talentus_scout_2026_dev_for_security}
+    expiration-time: 86400000 # 24h
