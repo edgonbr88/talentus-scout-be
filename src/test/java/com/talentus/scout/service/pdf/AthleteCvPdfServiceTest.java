@@ -45,7 +45,7 @@ class AthleteCvPdfServiceTest {
         athleteCvPdfService = new AthleteCvPdfService(
                 athleteRepository,
                 athleteBadgeRepository,
-                "https://talentus.app"
+                "https://talentusscout.com"
         );
     }
 

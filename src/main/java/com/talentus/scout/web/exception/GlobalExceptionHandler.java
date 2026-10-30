@@ -81,8 +81,8 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(body);
     }
 
-    @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<Map<String, Object>> handleIllegalArgument(IllegalArgumentException ex) {
+    @ExceptionHandler({IllegalArgumentException.class, IllegalStateException.class})
+    public ResponseEntity<Map<String, Object>> handleIllegalArgumentOrState(RuntimeException ex) {
         Map<String, Object> body = new HashMap<>();
         body.put("error", "BAD_REQUEST");
         body.put("message", ex.getMessage());

@@ -9,4 +9,6 @@ import java.util.List;
 @Repository
 public interface SubscriptionPlanRepository extends JpaRepository<SubscriptionPlan, String> {
     List<SubscriptionPlan> findAllByIsActiveTrue();
+    List<SubscriptionPlan> findAllByOrderByPriceUsdAsc();
+    long countByIsActiveTrue();
 }

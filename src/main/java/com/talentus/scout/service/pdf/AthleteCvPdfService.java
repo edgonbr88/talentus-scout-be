@@ -51,7 +51,7 @@ public class AthleteCvPdfService {
     public AthleteCvPdfService(
             AthleteRepository athleteRepository,
             AthleteBadgeRepository athleteBadgeRepository,
-            @Value("${talentus.frontend.base-url:https://talentus.app}") String frontendBaseUrl
+            @Value("${talentus.frontend.base-url:https://talentusscout.com}") String frontendBaseUrl
     ) {
         this.athleteRepository = athleteRepository;
         this.athleteBadgeRepository = athleteBadgeRepository;

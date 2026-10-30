@@ -1,10 +1,12 @@
 package com.talentus.scout.config;
 
 import com.talentus.scout.domain.entity.ClubOrganization;
+import com.talentus.scout.domain.entity.SubscriptionPlan;
 import com.talentus.scout.domain.entity.User;
 import com.talentus.scout.domain.enums.AccountStatus;
 import com.talentus.scout.domain.enums.UserRole;
 import com.talentus.scout.repository.ClubOrganizationRepository;
+import com.talentus.scout.repository.SubscriptionPlanRepository;
 import com.talentus.scout.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,6 +16,7 @@ import org.springframework.core.env.Profiles;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Component
@@ -23,17 +26,20 @@ public class DataInitializer implements CommandLineRunner {
 
     private final UserRepository userRepository;
     private final ClubOrganizationRepository clubOrganizationRepository;
+    private final SubscriptionPlanRepository subscriptionPlanRepository;
     private final PasswordEncoder passwordEncoder;
     private final Environment environment;
 
     public DataInitializer(
             UserRepository userRepository,
             ClubOrganizationRepository clubOrganizationRepository,
+            SubscriptionPlanRepository subscriptionPlanRepository,
             PasswordEncoder passwordEncoder,
             Environment environment
     ) {
         this.userRepository = userRepository;
         this.clubOrganizationRepository = clubOrganizationRepository;
+        this.subscriptionPlanRepository = subscriptionPlanRepository;
         this.passwordEncoder = passwordEncoder;
         this.environment = environment;
     }
@@ -95,6 +101,49 @@ public class DataInitializer implements CommandLineRunner {
             );
             clubOrganizationRepository.saveAll(initialClubs);
             log.info("[DataInitializer] 5 Clubes venezolanos iniciales registrados para autocompletado");
+        }
+
+        // 3. Planes de Suscripción Canónicos y Purgado de Planes de Prueba
+        // Purgar de forma estricta cualquier plan temporal de pruebas residual
+        subscriptionPlanRepository.findAll().forEach(plan -> {
+            String planId = plan.getId();
+            if (planId != null && (
+                    planId.startsWith("PRO_TEST_") ||
+                    planId.startsWith("PRO_TOGGLE_") ||
+                    planId.startsWith("PRO_UPDATABLE_") ||
+                    "plan-pro-mensual".equals(planId)
+            )) {
+                subscriptionPlanRepository.delete(plan);
+                log.info("[DataInitializer] Plan de pruebas eliminado de la base de datos: {}", planId);
+            }
+        });
+
+        // Garantizar la presencia y activación de los planes comerciales canónicos oficiales
+        if (!subscriptionPlanRepository.existsById("PRO_MONTHLY")) {
+            subscriptionPlanRepository.save(SubscriptionPlan.builder()
+                    .id("PRO_MONTHLY")
+                    .name("Plan Pro Mensual")
+                    .priceUsd(new BigDecimal("5.00"))
+                    .durationDays(30)
+                    .maxVideos(5)
+                    .hasRadarViews(true)
+                    .hasPdfCv(true)
+                    .isActive(true)
+                    .build());
+            log.info("[DataInitializer] Plan comercial oficial PRO_MONTHLY inicializado.");
+        }
+        if (!subscriptionPlanRepository.existsById("PRO_ANNUAL")) {
+            subscriptionPlanRepository.save(SubscriptionPlan.builder()
+                    .id("PRO_ANNUAL")
+                    .name("Plan Pro Anual (Pase de Temporada)")
+                    .priceUsd(new BigDecimal("50.00"))
+                    .durationDays(365)
+                    .maxVideos(10)
+                    .hasRadarViews(true)
+                    .hasPdfCv(true)
+                    .isActive(true)
+                    .build());
+            log.info("[DataInitializer] Plan comercial oficial PRO_ANNUAL inicializado.");
         }
     }
 }

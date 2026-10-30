@@ -140,11 +140,12 @@ class PaymentControllerIntegrationTest {
 
     @Test
     void reportPagoMovilAndAdminApproval_CompleteWorkflow() throws Exception {
+        String refNumber = "REF" + (System.currentTimeMillis() % 1000000);
         // 1. Tutor reporta pago móvil
         ReportPagoMovilRequest request = ReportPagoMovilRequest.builder()
                 .athleteId(testAthlete.getId())
                 .planId("PRO_MONTHLY")
-                .referenceNumber("889900")
+                .referenceNumber(refNumber)
                 .paymentDate(LocalDate.now())
                 .originBank("Banesco")
                 .originPhone("04121234567")
@@ -159,7 +160,7 @@ class PaymentControllerIntegrationTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id", notNullValue()))
                 .andExpect(jsonPath("$.status", is("PENDING_AUDIT")))
-                .andExpect(jsonPath("$.referenceNumber", is("889900")))
+                .andExpect(jsonPath("$.referenceNumber", is(refNumber)))
                 .andReturn()
                 .getResponse()
                 .getContentAsString();
@@ -180,7 +181,7 @@ class PaymentControllerIntegrationTest {
 
         // 4. Tutor consulta estado de suscripción de su atleta: debe estar ACTIVE
         mockMvc.perform(get("/api/v1/payments/athlete/" + testAthlete.getId() + "/status")
-                        .header("Authorization", "Bearer " + tutorToken))
+                .header("Authorization", "Bearer " + tutorToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status", is("ACTIVE")))
                 .andExpect(jsonPath("$.visibleInScoutDirectory", is(true)));
@@ -188,10 +189,11 @@ class PaymentControllerIntegrationTest {
 
     @Test
     void reportPagoMovil_WithoutAmountVes_SuccessCalculatesAutomatically() throws Exception {
+        String refNumber = "REF_AUTO" + (System.currentTimeMillis() % 1000000);
         ReportPagoMovilRequest request = ReportPagoMovilRequest.builder()
                 .athleteId(testAthlete.getId())
                 .planId("PRO_MONTHLY")
-                .referenceNumber("776655")
+                .referenceNumber(refNumber)
                 .paymentDate(LocalDate.now())
                 .originBank("Banesco")
                 .originPhone("04149876543")
@@ -204,7 +206,7 @@ class PaymentControllerIntegrationTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id", notNullValue()))
                 .andExpect(jsonPath("$.status", is("PENDING_AUDIT")))
-                .andExpect(jsonPath("$.referenceNumber", is("776655")))
+                .andExpect(jsonPath("$.referenceNumber", is(refNumber)))
                 .andExpect(jsonPath("$.amountVes", notNullValue()))
                 .andExpect(jsonPath("$.amountUsd", is(5.00)));
     }

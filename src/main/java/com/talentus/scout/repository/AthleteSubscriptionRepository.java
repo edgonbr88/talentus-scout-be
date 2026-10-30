@@ -20,4 +20,6 @@ public interface AthleteSubscriptionRepository extends JpaRepository<AthleteSubs
     boolean existsByAthleteIdAndStatusAndEndDateAfter(UUID athleteId, SubscriptionStatus status, Instant now);
 
     List<AthleteSubscription> findByAthleteIdOrderByCreatedAtDesc(UUID athleteId);
+
+    long countByPlanIdAndStatus(String planId, SubscriptionStatus status);
 }

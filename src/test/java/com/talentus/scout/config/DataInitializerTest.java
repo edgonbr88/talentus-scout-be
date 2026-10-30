@@ -1,9 +1,11 @@
 package com.talentus.scout.config;
 
+import com.talentus.scout.domain.entity.SubscriptionPlan;
 import com.talentus.scout.domain.entity.User;
 import com.talentus.scout.domain.enums.AccountStatus;
 import com.talentus.scout.domain.enums.UserRole;
 import com.talentus.scout.repository.ClubOrganizationRepository;
+import com.talentus.scout.repository.SubscriptionPlanRepository;
 import com.talentus.scout.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -16,6 +18,8 @@ import org.springframework.core.env.Environment;
 import org.springframework.core.env.Profiles;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.math.BigDecimal;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -33,6 +37,9 @@ class DataInitializerTest {
     private ClubOrganizationRepository clubOrganizationRepository;
 
     @Mock
+    private SubscriptionPlanRepository subscriptionPlanRepository;
+
+    @Mock
     private PasswordEncoder passwordEncoder;
 
     @Mock
@@ -45,11 +52,15 @@ class DataInitializerTest {
         dataInitializer = new DataInitializer(
                 userRepository,
                 clubOrganizationRepository,
+                subscriptionPlanRepository,
                 passwordEncoder,
                 environment
         );
         lenient().when(passwordEncoder.encode(any())).thenReturn("hashed_password");
         lenient().when(clubOrganizationRepository.count()).thenReturn(5L);
+        lenient().when(subscriptionPlanRepository.findAll()).thenReturn(List.of());
+        lenient().when(subscriptionPlanRepository.existsById("PRO_MONTHLY")).thenReturn(true);
+        lenient().when(subscriptionPlanRepository.existsById("PRO_ANNUAL")).thenReturn(true);
     }
 
     @Test
@@ -111,5 +122,36 @@ class DataInitializerTest {
                 .extracting(User::getEmail)
                 .containsExactlyInAnyOrder("edgar.gonzalez@talentusscout.com", "brandon.garcia@talentusscout.com")
                 .doesNotContain("admin@talentus.app");
+    }
+
+    @Test
+    @DisplayName("Debe purgar planes de prueba (PRO_TEST_..., PRO_TOGGLE_..., plan-pro-mensual) y asegurar planes canónicos")
+    void run_purgesTestPlans_andEnsuresCanonicalPlans() {
+        SubscriptionPlan testPlan1 = SubscriptionPlan.builder().id("PRO_TEST_123").name("Test 1").build();
+        SubscriptionPlan testPlan2 = SubscriptionPlan.builder().id("PRO_TOGGLE_ABC").name("Test 2").build();
+        SubscriptionPlan testPlan3 = SubscriptionPlan.builder().id("PRO_UPDATABLE_XYZ").name("Test 3").build();
+        SubscriptionPlan legacyPlan = SubscriptionPlan.builder().id("plan-pro-mensual").name("Legacy").build();
+        SubscriptionPlan canonicalPlan = SubscriptionPlan.builder().id("PRO_MONTHLY").name("Oficial").build();
+
+        when(subscriptionPlanRepository.findAll()).thenReturn(List.of(testPlan1, testPlan2, testPlan3, legacyPlan, canonicalPlan));
+        when(subscriptionPlanRepository.existsById("PRO_MONTHLY")).thenReturn(false);
+        when(subscriptionPlanRepository.existsById("PRO_ANNUAL")).thenReturn(false);
+
+        dataInitializer.run();
+
+        // Debe eliminar únicamente los planes de prueba
+        verify(subscriptionPlanRepository).delete(testPlan1);
+        verify(subscriptionPlanRepository).delete(testPlan2);
+        verify(subscriptionPlanRepository).delete(testPlan3);
+        verify(subscriptionPlanRepository).delete(legacyPlan);
+        verify(subscriptionPlanRepository, never()).delete(canonicalPlan);
+
+        // Debe crear los planes canónicos faltantes
+        ArgumentCaptor<SubscriptionPlan> planCaptor = ArgumentCaptor.forClass(SubscriptionPlan.class);
+        verify(subscriptionPlanRepository, times(2)).save(planCaptor.capture());
+
+        assertThat(planCaptor.getAllValues())
+                .extracting(SubscriptionPlan::getId)
+                .containsExactlyInAnyOrder("PRO_MONTHLY", "PRO_ANNUAL");
     }
 }

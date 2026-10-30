@@ -1,12 +1,10 @@
 package com.talentus.scout.domain.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.*;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 
 @Entity
 @Table(name = "subscription_plans")
@@ -47,4 +45,43 @@ public class SubscriptionPlan {
     @Builder.Default
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
+
+    @Column(name = "created_at", updatable = false)
+    private Instant createdAt;
+
+    @Column(name = "updated_at")
+    private Instant updatedAt;
+
+    @PrePersist
+    protected void onCreate() {
+        if (this.createdAt == null) {
+            this.createdAt = Instant.now();
+        }
+        if (this.updatedAt == null) {
+            this.updatedAt = Instant.now();
+        }
+        if (this.isActive == null) {
+            this.isActive = true;
+        }
+        if (this.priceUsd == null) {
+            this.priceUsd = BigDecimal.ZERO;
+        }
+        if (this.durationDays == null) {
+            this.durationDays = 30;
+        }
+        if (this.maxVideos == null) {
+            this.maxVideos = 1;
+        }
+        if (this.hasRadarViews == null) {
+            this.hasRadarViews = false;
+        }
+        if (this.hasPdfCv == null) {
+            this.hasPdfCv = false;
+        }
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        this.updatedAt = Instant.now();
+    }
 }

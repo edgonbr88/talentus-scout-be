@@ -33,6 +33,17 @@ public class EmailService {
     @Value("${talentus.mail.branding.logo-url:https://i.imgur.com/9j8oQ2B.png}")
     private String brandingLogoUrl;
 
+    @Value("${talentus.frontend.base-url:https://talentusscout.com}")
+    private String frontendBaseUrl;
+
+    public String getBaseUrl() {
+        if (frontendBaseUrl == null || frontendBaseUrl.trim().isEmpty()) {
+            return "https://talentusscout.com";
+        }
+        String url = frontendBaseUrl.trim();
+        return url.endsWith("/") ? url.substring(0, url.length() - 1) : url;
+    }
+
     private String certificationInviteTemplate;
     private String emailVerificationTemplate;
 
@@ -190,10 +201,10 @@ public class EmailService {
                       <p>El equipo legal y administrativo de Talentus Scout ha verificado exitosamente la documentación de patria potestad para tu atleta <strong>%s</strong>.</p>
                       <p>El perfil de tu atleta ahora cuenta con el distintivo oficial de <strong>Patria Potestad Verificada</strong> y se encuentra plenamente habilitado en el Directorio Oficial de Scouts.</p>
                       <div style='margin-top: 20px;'>
-                        <a href='https://talentus.app/dashboard' style='background: #10B981; color: #0A0F1D; font-weight: bold; padding: 10px 20px; border-radius: 6px; text-decoration: none;'>Ir a Mi Panel</a>
+                        <a href='%s/dashboard' style='background: #10B981; color: #0A0F1D; font-weight: bold; padding: 10px 20px; border-radius: 6px; text-decoration: none;'>Ir a Mi Panel</a>
                       </div>
                     </div>
-                  """, brandingLogoUrl, tutorName != null ? tutorName : "Representante Legal", athleteName)
+                  """, brandingLogoUrl, tutorName != null ? tutorName : "Representante Legal", athleteName, getBaseUrl())
                 : String.format("""
                     <div style='font-family: sans-serif; background: #0A0F1D; color: #F8FAFC; padding: 24px; border-radius: 12px;'>
                       <div style='text-align: center; margin-bottom: 20px;'>
@@ -205,10 +216,10 @@ public class EmailService {
                       <p><strong>Motivo / Observación del Administrador:</strong> %s</p>
                       <p>Puedes ingresar a tu panel de representante para cargar una copia clara y legible de la documentación requerida.</p>
                       <div style='margin-top: 20px;'>
-                        <a href='https://talentus.app/dashboard' style='background: #3B82F6; color: #FFFFFF; font-weight: bold; padding: 10px 20px; border-radius: 6px; text-decoration: none;'>Actualizar Documento en Mi Panel</a>
+                        <a href='%s/dashboard' style='background: #3B82F6; color: #FFFFFF; font-weight: bold; padding: 10px 20px; border-radius: 6px; text-decoration: none;'>Actualizar Documento en Mi Panel</a>
                       </div>
                     </div>
-                  """, brandingLogoUrl, tutorName != null ? tutorName : "Representante Legal", athleteName, reason != null ? reason : "Documentación inconsistente o no legible");
+                  """, brandingLogoUrl, tutorName != null ? tutorName : "Representante Legal", athleteName, reason != null ? reason : "Documentación inconsistente o no legible", getBaseUrl());
 
         String mockDetails = String.format("Atleta: %s\nAprobado: %s\nMotivo: %s", athleteName, approved, reason);
 
@@ -232,10 +243,10 @@ public class EmailService {
                       <p>El comité de admisiones de Talentus Scout ha validado exitosamente tus credenciales deportivas y vinculación institucional.</p>
                       <p>Tu cuenta oficial de <strong>Scout / Veedor</strong> ya se encuentra activa con acceso pleno al Directorio Nacional de Talentos Juveniles.</p>
                       <div style='margin-top: 20px;'>
-                        <a href='https://talentus.app/scout/directory' style='background: #10B981; color: #0A0F1D; font-weight: bold; padding: 10px 20px; border-radius: 6px; text-decoration: none;'>Acceder al Directorio de Atletas</a>
+                        <a href='%s/scout/directory' style='background: #10B981; color: #0A0F1D; font-weight: bold; padding: 10px 20px; border-radius: 6px; text-decoration: none;'>Acceder al Directorio de Atletas</a>
                       </div>
                     </div>
-                  """, brandingLogoUrl, scoutName != null ? scoutName : "Estimado(a) Scout")
+                  """, brandingLogoUrl, scoutName != null ? scoutName : "Estimado(a) Scout", getBaseUrl())
                 : String.format("""
                     <div style='font-family: sans-serif; background: #0A0F1D; color: #F8FAFC; padding: 24px; border-radius: 12px;'>
                       <div style='text-align: center; margin-bottom: 20px;'>
@@ -247,10 +258,10 @@ public class EmailService {
                       <p><strong>Motivo / Observación del Administrador:</strong> %s</p>
                       <p>Puedes iniciar sesión en la plataforma para cargar una nueva copia legible de tu credencial o carnet institucional actualizado.</p>
                       <div style='margin-top: 20px;'>
-                        <a href='https://talentus.app/login' style='background: #3B82F6; color: #FFFFFF; font-weight: bold; padding: 10px 20px; border-radius: 6px; text-decoration: none;'>Iniciar Sesión y Subsanar Credencial</a>
+                        <a href='%s/login' style='background: #3B82F6; color: #FFFFFF; font-weight: bold; padding: 10px 20px; border-radius: 6px; text-decoration: none;'>Iniciar Sesión y Subsanar Credencial</a>
                       </div>
                     </div>
-                  """, brandingLogoUrl, scoutName != null ? scoutName : "Estimado(a) Scout", reason != null ? reason : "Credencial no concluyente o ilegible");
+                  """, brandingLogoUrl, scoutName != null ? scoutName : "Estimado(a) Scout", reason != null ? reason : "Credencial no concluyente o ilegible", getBaseUrl());
 
         String mockDetails = String.format("Scout: %s\nAprobado: %s\nMotivo: %s", scoutName, approved, reason);
 
@@ -275,10 +286,10 @@ public class EmailService {
                       <p>Nos complace informarte que la certificación <strong>%s</strong> (%s) para tu atleta <strong>%s</strong> ha sido verificada y aprobada oficialmente.</p>
                       <p>La insignia ya luce visible en su Cédula Deportiva pública y en el radar de los scouts de clubes profesionales.</p>
                       <div style='margin-top: 20px;'>
-                        <a href='https://talentus.app/dashboard' style='background: #10B981; color: #0A0F1D; font-weight: bold; padding: 10px 20px; border-radius: 6px; text-decoration: none;'>Ver Cédula en Mi Panel</a>
+                        <a href='%s/dashboard' style='background: #10B981; color: #0A0F1D; font-weight: bold; padding: 10px 20px; border-radius: 6px; text-decoration: none;'>Ver Cédula en Mi Panel</a>
                       </div>
                     </div>
-                  """, brandingLogoUrl, tutorName != null ? tutorName : "Representante Legal", badgeTitle, badgeTypeLabel, athleteName)
+                  """, brandingLogoUrl, tutorName != null ? tutorName : "Representante Legal", badgeTitle, badgeTypeLabel, athleteName, getBaseUrl())
                 : String.format("""
                     <div style='font-family: sans-serif; background: #0A0F1D; color: #F8FAFC; padding: 24px; border-radius: 12px;'>
                       <div style='text-align: center; margin-bottom: 20px;'>
@@ -290,10 +301,10 @@ public class EmailService {
                       <p><strong>Motivo / Observación:</strong> %s</p>
                       <p>Puedes ingresar a tu panel de tutor para generar una nueva solicitud con los recaudos o contactos actualizados.</p>
                       <div style='margin-top: 20px;'>
-                        <a href='https://talentus.app/dashboard' style='background: #3B82F6; color: #FFFFFF; font-weight: bold; padding: 10px 20px; border-radius: 6px; text-decoration: none;'>Ir a Mi Panel de Tutor</a>
+                        <a href='%s/dashboard' style='background: #3B82F6; color: #FFFFFF; font-weight: bold; padding: 10px 20px; border-radius: 6px; text-decoration: none;'>Ir a Mi Panel de Tutor</a>
                       </div>
                     </div>
-                  """, brandingLogoUrl, tutorName != null ? tutorName : "Representante Legal", badgeTitle, badgeTypeLabel, athleteName, reason != null ? reason : "Documento probatorio no concluyente");
+                  """, brandingLogoUrl, tutorName != null ? tutorName : "Representante Legal", badgeTitle, badgeTypeLabel, athleteName, reason != null ? reason : "Documento probatorio no concluyente", getBaseUrl());
 
         String mockDetails = String.format("Atleta: %s\nInsignia: %s\nAprobado: %s\nMotivo: %s", athleteName, badgeTitle, approved, reason);
 
@@ -313,10 +324,10 @@ public class EmailService {
                   <p>Para garantizar los estándares de salvaguarda y protección de menores (LOPNNA / FIFA), tu perfil de scout requiere una actualización de credenciales y club activo para continuar con acceso al Directorio de Talentos Juveniles.</p>
                   <p><strong>Detalle:</strong> %s</p>
                   <div style='margin-top: 20px;'>
-                    <a href='https://talentus.app/login' style='background: #3B82F6; color: #FFFFFF; font-weight: bold; padding: 10px 20px; border-radius: 6px; text-decoration: none;'>Iniciar Sesión y Actualizar Perfil</a>
+                    <a href='%s/login' style='background: #3B82F6; color: #FFFFFF; font-weight: bold; padding: 10px 20px; border-radius: 6px; text-decoration: none;'>Iniciar Sesión y Actualizar Perfil</a>
                   </div>
                 </div>
-              """, brandingLogoUrl, scoutName != null ? scoutName : "Estimado(a) Scout", clubName, reason != null ? reason : "Club dado de baja por la administración.");
+              """, brandingLogoUrl, scoutName != null ? scoutName : "Estimado(a) Scout", clubName, reason != null ? reason : "Club dado de baja por la administración.", getBaseUrl());
 
         String mockDetails = String.format("Scout: %s\nClub: %s\nMotivo: %s", scoutName, clubName, reason);
         return dispatchEmail(toEmail, subject, htmlBody, mockDetails);
