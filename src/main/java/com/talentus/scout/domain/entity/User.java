@@ -3,7 +3,13 @@ package com.talentus.scout.domain.entity;
 import com.talentus.scout.domain.enums.AccountStatus;
 import com.talentus.scout.domain.enums.UserRole;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.annotations.UuidGenerator;
 import org.hibernate.type.SqlTypes;
 
 import java.time.Instant;
@@ -11,10 +17,15 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "users")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class User {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
+    @UuidGenerator(style = UuidGenerator.Style.VERSION_7)
     private UUID id;
 
     @Column(name = "email", nullable = false, unique = true, length = 255)
@@ -29,11 +40,13 @@ public class User {
     @Column(name = "phone_number", nullable = false, length = 30)
     private String phoneNumber;
 
+    @Builder.Default
     @Enumerated(EnumType.STRING)
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Column(name = "role", columnDefinition = "user_role", nullable = false)
     private UserRole role = UserRole.TUTOR;
 
+    @Builder.Default
     @Enumerated(EnumType.STRING)
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Column(name = "status", columnDefinition = "account_status", nullable = false)
@@ -45,8 +58,18 @@ public class User {
     @Column(name = "updated_at")
     private Instant updatedAt;
 
-    public User() {
-    }
+    @Builder.Default
+    @Column(name = "is_profile_completed", nullable = false)
+    private boolean isProfileCompleted = true;
+
+    @Column(name = "country", length = 100)
+    private String country;
+
+    @Column(name = "state", length = 100)
+    private String state;
+
+    @Column(name = "address", length = 255)
+    private String address;
 
     public User(String email, String passwordHash, String fullName, String phoneNumber, UserRole role, AccountStatus status) {
         this.email = email;
@@ -72,77 +95,5 @@ public class User {
     @PreUpdate
     protected void onUpdate() {
         updatedAt = Instant.now();
-    }
-
-    public UUID getId() {
-        return id;
-    }
-
-    public void setId(UUID id) {
-        this.id = id;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
-    public String getPasswordHash() {
-        return passwordHash;
-    }
-
-    public void setPasswordHash(String passwordHash) {
-        this.passwordHash = passwordHash;
-    }
-
-    public String getFullName() {
-        return fullName;
-    }
-
-    public void setFullName(String fullName) {
-        this.fullName = fullName;
-    }
-
-    public String getPhoneNumber() {
-        return phoneNumber;
-    }
-
-    public void setPhoneNumber(String phoneNumber) {
-        this.phoneNumber = phoneNumber;
-    }
-
-    public UserRole getRole() {
-        return role;
-    }
-
-    public void setRole(UserRole role) {
-        this.role = role;
-    }
-
-    public AccountStatus getStatus() {
-        return status;
-    }
-
-    public void setStatus(AccountStatus status) {
-        this.status = status;
-    }
-
-    public Instant getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(Instant createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public Instant getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public void setUpdatedAt(Instant updatedAt) {
-        this.updatedAt = updatedAt;
     }
 }

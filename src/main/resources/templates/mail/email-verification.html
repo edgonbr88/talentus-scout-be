@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Verifica tu Correo Electrónico — Talentus Scout</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #080D1A;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      color: #E2E8F0;
+    }
+    .wrapper {
+      width: 100%;
+      background-color: #080D1A;
+      padding: 40px 10px;
+    }
+    .container {
+      max-width: 580px;
+      margin: 0 auto;
+      background-color: #0E1527;
+      border: 1px solid #1E293B;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+    .header {
+      background: linear-gradient(135deg, #0F172A 0%, #064E3B 100%);
+      padding: 30px 24px;
+      text-align: center;
+      border-bottom: 1px solid #065F46;
+    }
+    .brand-title {
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      color: #FFFFFF;
+      margin: 0;
+      text-transform: uppercase;
+    }
+    .brand-title span {
+      color: #10B981;
+    }
+    .badge-tag {
+      display: inline-block;
+      margin-top: 10px;
+      background-color: rgba(16, 185, 129, 0.2);
+      border: 1px solid #10B981;
+      color: #6EE7B7;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+    }
+    .content {
+      padding: 30px 24px;
+    }
+    .salutation {
+      font-size: 18px;
+      font-weight: 600;
+      color: #F8FAFC;
+      margin-top: 0;
+      margin-bottom: 16px;
+    }
+    .text {
+      font-size: 14px;
+      line-height: 1.6;
+      color: #94A3B8;
+      margin-bottom: 20px;
+    }
+    .action-box {
+      text-align: center;
+      margin: 32px 0;
+    }
+    .btn-verify {
+      display: inline-block;
+      background-color: #10B981;
+      color: #FFFFFF !important;
+      font-weight: 700;
+      font-size: 15px;
+      text-decoration: none;
+      padding: 14px 32px;
+      border-radius: 8px;
+      box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4);
+      letter-spacing: 0.02em;
+    }
+    .legal-card {
+      background-color: #131E35;
+      border-left: 3px solid #10B981;
+      padding: 16px;
+      border-radius: 6px;
+      margin-top: 24px;
+    }
+    .legal-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #38BDF8;
+      margin-top: 0;
+      margin-bottom: 6px;
+    }
+    .legal-text {
+      font-size: 12px;
+      color: #94A3B8;
+      margin: 0;
+      line-height: 1.5;
+    }
+    .footer {
+      padding: 20px 24px;
+      background-color: #0A0F1D;
+      text-align: center;
+      font-size: 11px;
+      color: #64748B;
+      border-top: 1px solid #1E293B;
+    }
+    .url-fallback {
+      font-size: 12px;
+      word-break: break-all;
+      color: #60A5FA;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <div class="container">
+      <div class="header">
+        <img src="https://i.imgur.com/9j8oQ2B.png" alt="Talentus Scout" style="max-height: 48px; width: auto; margin: 0 auto 12px auto; display: block;" />
+        <h1 class="brand-title">TALENTUS <span>SCOUT</span></h1>
+        <div class="badge-tag">VERIFICACIÓN OFICIAL DE CUENTA</div>
+      </div>
+      <div class="content">
+        <p class="salutation">¡Hola, ##RECIPIENT_NAME##!</p>
+        <p class="text">
+          Te damos la bienvenida a <strong>Talentus Scout</strong>, la plataforma oficial de visibilidad y radar para el fútbol formativo juvenil.
+        </p>
+        <p class="text">
+          Para garantizar la seguridad de los menores, prevenir suplantaciones y dar cumplimiento estricto a las normas de tutela legal, es indispensable verificar tu dirección de correo electrónico haciendo clic en el siguiente botón:
+        </p>
+
+        <div class="action-box">
+          <a href="##VERIFICATION_LINK##" class="btn-verify" target="_blank">
+            Verificar mi Correo Electrónico
+          </a>
+        </div>
+
+        <p class="text" style="font-size: 12px; text-align: center; color: #64748B;">
+          Este enlace es de uso único y expirará en ##EXPIRATION_HOURS## horas.
+        </p>
+
+        <div class="legal-card">
+          <p class="legal-title">Protección Integral del Menor y Salvaguarda Legal</p>
+          <p class="legal-text">
+            El documento de identidad que adjuntaste durante tu registro ha quedado en custodia protegida bajo protocolos de estricta privacidad para certificar tu consentimiento de representación legal.
+          </p>
+        </div>
+
+        <p class="text" style="font-size: 12px; margin-top: 24px;">
+          Si el botón no funciona en tu cliente de correo, copia y pega el siguiente enlace directamente en tu navegador:
+          <br>
+          <a href="##VERIFICATION_LINK##" class="url-fallback">##VERIFICATION_LINK##</a>
+        </p>
+      </div>
+      <div class="footer">
+        © 2026 Talentus Scout. Todos los derechos reservados.
+        <br>
+        Si no realizaste este registro, puedes ignorar este correo de forma segura.
+      </div>
+    </div>
+  </div>
+</body>
+</html>

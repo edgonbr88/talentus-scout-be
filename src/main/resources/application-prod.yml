@@ -1,0 +1,63 @@
+spring:
+  config:
+    activate:
+      on-profile: prod
+  datasource:
+    url: jdbc:postgresql://${DB_HOST}:${DB_PORT:5432}/${DB_NAME:talentus_scout_prod}?sslmode=require&prepareThreshold=0
+    username: ${DB_USER}
+    password: ${DB_PWD}
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 1
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      keepalive-time: 30000
+      connection-test-query: SELECT 1
+  jpa:
+    show-sql: false
+    hibernate:
+      ddl-auto: validate
+
+server:
+  port: ${PORT:8080}
+  error:
+    include-stacktrace: never
+    include-message: never
+    include-binding-errors: never
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: when_authorized
+
+security:
+  jwt:
+    secret-key: ${JWT_SECRET_KEY}
+    expiration-time: 86400000 # 24 horas
+
+talentus:
+  storage:
+    provider: ${STORAGE_PROVIDER:r2}
+    r2:
+      endpoint: ${R2_ENDPOINT:}
+      access-key: ${R2_ACCESS_KEY_ID:}
+      secret-key: ${R2_SECRET_ACCESS_KEY:}
+      public-bucket: ${R2_PUBLIC_BUCKET:talentus-public}
+      private-bucket: ${R2_PRIVATE_BUCKET:talentus-private-documents}
+      cdn-base-url: ${R2_CDN_BASE_URL:https://cdn.talentusscout.com}
+  video:
+    enabled: ${VIDEO_FEATURE_ENABLED:false}
+  frontend:
+    base-url: ${FRONTEND_BASE_URL:https://talentusscout.com}
+    certify-url: ${FRONTEND_CERTIFY_URL:https://talentusscout.com/certify}
+  mail:
+    enabled: ${MAIL_ENABLED:true}
+    from: ${MAIL_FROM:contacto@talentusscout.com}
+    api-key: ${RESEND_API_KEY:}
+    branding:
+      logo-url: ${TALENTUS_MAIL_LOGO_URL:https://i.imgur.com/9j8oQ2B.png}

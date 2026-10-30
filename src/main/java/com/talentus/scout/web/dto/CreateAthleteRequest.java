@@ -3,11 +3,23 @@ package com.talentus.scout.web.dto;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Past;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.UUID;
 
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class CreateAthleteRequest {
 
     @NotBlank(message = "El nombre es obligatorio")
@@ -22,6 +34,7 @@ public class CreateAthleteRequest {
     @Past(message = "La fecha de nacimiento debe ser en el pasado")
     private LocalDate birthDate;
 
+    @Builder.Default
     private String gender = "MALE";
 
     @NotBlank(message = "La posición principal es obligatoria")
@@ -35,12 +48,26 @@ public class CreateAthleteRequest {
     @Size(max = 20)
     private String preferredFoot;
 
-    private String nationality = "Venezolana";
+    @Pattern(regexp = "^(Venezuela|Colombia|Chile|Perú|Peru|Ecuador|Venezolana|Colombiana|Chilena|Peruana|Ecuatoriana)$", message = "La nacionalidad debe corresponder a un país autorizado (Venezuela, Colombia, Chile, Perú, Ecuador)")
+    @Builder.Default
+    private String nationality = "Venezuela";
 
     @Size(max = 150)
     private String secondaryPassports;
 
     private UUID currentClubId;
+
+    @Size(max = 150, message = "El nombre del club personalizado no puede exceder 150 caracteres")
+    private String customClubName;
+
+    @Size(max = 100, message = "La ciudad del club personalizado no puede exceder 100 caracteres")
+    private String customClubCity;
+
+    @Size(max = 100, message = "El estado del club personalizado no puede exceder 100 caracteres")
+    private String customClubState;
+
+    @Size(max = 100, message = "El país del club personalizado no puede exceder 100 caracteres")
+    private String customClubCountry;
 
     @Size(max = 50)
     private String federationLicenseNumber;
@@ -53,144 +80,10 @@ public class CreateAthleteRequest {
 
     private String bio;
 
-    private boolean isPublic = true;
-
-    public CreateAthleteRequest() {
-    }
-
-    public CreateAthleteRequest(String firstName, String lastName, LocalDate birthDate, String primaryPosition, String preferredFoot) {
-        this.firstName = firstName;
-        this.lastName = lastName;
-        this.birthDate = birthDate;
-        this.primaryPosition = primaryPosition;
-        this.preferredFoot = preferredFoot;
-    }
-
-    public String getFirstName() {
-        return firstName;
-    }
-
-    public void setFirstName(String firstName) {
-        this.firstName = firstName;
-    }
-
-    public String getLastName() {
-        return lastName;
-    }
-
-    public void setLastName(String lastName) {
-        this.lastName = lastName;
-    }
-
-    public LocalDate getBirthDate() {
-        return birthDate;
-    }
-
-    public void setBirthDate(LocalDate birthDate) {
-        this.birthDate = birthDate;
-    }
-
-    public String getGender() {
-        return gender;
-    }
-
-    public void setGender(String gender) {
-        this.gender = gender;
-    }
-
-    public String getPrimaryPosition() {
-        return primaryPosition;
-    }
-
-    public void setPrimaryPosition(String primaryPosition) {
-        this.primaryPosition = primaryPosition;
-    }
-
-    public String getSecondaryPosition() {
-        return secondaryPosition;
-    }
-
-    public void setSecondaryPosition(String secondaryPosition) {
-        this.secondaryPosition = secondaryPosition;
-    }
-
-    public String getPreferredFoot() {
-        return preferredFoot;
-    }
-
-    public void setPreferredFoot(String preferredFoot) {
-        this.preferredFoot = preferredFoot;
-    }
-
-    public String getNationality() {
-        return nationality;
-    }
-
-    public void setNationality(String nationality) {
-        this.nationality = nationality;
-    }
-
-    public String getSecondaryPassports() {
-        return secondaryPassports;
-    }
-
-    public void setSecondaryPassports(String secondaryPassports) {
-        this.secondaryPassports = secondaryPassports;
-    }
-
-    public UUID getCurrentClubId() {
-        return currentClubId;
-    }
-
-    public void setCurrentClubId(UUID currentClubId) {
-        this.currentClubId = currentClubId;
-    }
-
-    public String getFederationLicenseNumber() {
-        return federationLicenseNumber;
-    }
-
-    public void setFederationLicenseNumber(String federationLicenseNumber) {
-        this.federationLicenseNumber = federationLicenseNumber;
-    }
-
-    public BigDecimal getHeightCm() {
-        return heightCm;
-    }
-
-    public void setHeightCm(BigDecimal heightCm) {
-        this.heightCm = heightCm;
-    }
-
-    public BigDecimal getWeightKg() {
-        return weightKg;
-    }
-
-    public void setWeightKg(BigDecimal weightKg) {
-        this.weightKg = weightKg;
-    }
-
-    public String getProfilePhotoUrl() {
-        return profilePhotoUrl;
-    }
-
-    public void setProfilePhotoUrl(String profilePhotoUrl) {
-        this.profilePhotoUrl = profilePhotoUrl;
-    }
-
-    public String getBio() {
-        return bio;
-    }
-
-    public void setBio(String bio) {
-        this.bio = bio;
-    }
+    @Builder.Default
+    private Boolean isPublic = true;
 
     public boolean isPublic() {
-        return isPublic;
-    }
-
-    public void setPublic(boolean aPublic) {
-        isPublic = aPublic;
+        return isPublic != null ? isPublic : true;
     }
 }

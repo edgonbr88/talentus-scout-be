@@ -1,15 +1,27 @@
 package com.talentus.scout.domain.entity;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import org.hibernate.annotations.UuidGenerator;
+
 import java.time.Instant;
 import java.util.UUID;
 
 @Entity
 @Table(name = "clubs_organizations")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class ClubOrganization {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
+    @UuidGenerator(style = UuidGenerator.Style.VERSION_7)
     private UUID id;
 
     @Column(name = "name", nullable = false, length = 150)
@@ -24,20 +36,19 @@ public class ClubOrganization {
     @Column(name = "state", nullable = false, length = 100)
     private String state;
 
+    @Builder.Default
     @Column(name = "country", nullable = false, length = 100)
     private String country = "Venezuela";
 
     @Column(name = "logo_url", columnDefinition = "TEXT")
     private String logoUrl;
 
+    @Builder.Default
     @Column(name = "verified_official", nullable = false)
     private boolean verifiedOfficial = false;
 
     @Column(name = "created_at", updatable = false)
     private Instant createdAt;
-
-    public ClubOrganization() {
-    }
 
     public ClubOrganization(String name, String federationCode, String city, String state, String country, String logoUrl, boolean verifiedOfficial) {
         this.name = name;
@@ -55,77 +66,5 @@ public class ClubOrganization {
         if (createdAt == null) {
             createdAt = Instant.now();
         }
-    }
-
-    public UUID getId() {
-        return id;
-    }
-
-    public void setId(UUID id) {
-        this.id = id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getFederationCode() {
-        return federationCode;
-    }
-
-    public void setFederationCode(String federationCode) {
-        this.federationCode = federationCode;
-    }
-
-    public String getCity() {
-        return city;
-    }
-
-    public void setCity(String city) {
-        this.city = city;
-    }
-
-    public String getState() {
-        return state;
-    }
-
-    public void setState(String state) {
-        this.state = state;
-    }
-
-    public String getCountry() {
-        return country;
-    }
-
-    public void setCountry(String country) {
-        this.country = country;
-    }
-
-    public String getLogoUrl() {
-        return logoUrl;
-    }
-
-    public void setLogoUrl(String logoUrl) {
-        this.logoUrl = logoUrl;
-    }
-
-    public boolean isVerifiedOfficial() {
-        return verifiedOfficial;
-    }
-
-    public void setVerifiedOfficial(boolean verifiedOfficial) {
-        this.verifiedOfficial = verifiedOfficial;
-    }
-
-    public Instant getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(Instant createdAt) {
-        this.createdAt = createdAt;
     }
 }

@@ -34,4 +34,19 @@ public class AthleteSecurity {
                 .map(athlete -> athlete.getTutor().getEmail().equalsIgnoreCase(authentication.getName()))
                 .orElse(false);
     }
+
+    @Transactional(readOnly = true)
+    public boolean canDownloadCv(UUID athleteId, Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated() || athleteId == null) {
+            return false;
+        }
+
+        boolean isPrivileged = authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ROLE_SCOUT"));
+        if (isPrivileged) {
+            return true;
+        }
+
+        return isOwner(athleteId, authentication);
+    }
 }

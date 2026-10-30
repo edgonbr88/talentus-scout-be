@@ -31,3 +31,11 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Secrets and configuration ###
+src/main/resources/application.yml
+src/main/resources/application-local.yml
+
+### Storage ###
+uploads/
+

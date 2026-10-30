@@ -1,12 +1,24 @@
 package com.talentus.scout.web.dto;
 
 import com.talentus.scout.domain.entity.Athlete;
+import com.talentus.scout.domain.enums.LegalVerificationStatus;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.Period;
 import java.util.UUID;
 
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class AthleteResponse {
 
     private UUID id;
@@ -26,14 +38,23 @@ public class AthleteResponse {
     private String federationLicenseNumber;
     private BigDecimal heightCm;
     private BigDecimal weightKg;
+    private boolean medicalCertifiedMetrics;
+    private String medicalCertifierInfo;
+    private String subscriptionStatus;
+    private Instant subscriptionEndDate;
+    private String subscriptionPlanName;
     private String profilePhotoUrl;
     private String bio;
     private String slug;
     private boolean isPublic;
+    private String identityDocumentType;
+    private String identityDocumentNumber;
+    private String identityDocumentFileUrl;
+    private boolean hasIdentityDocument;
+    private LegalVerificationStatus legalVerificationStatus;
+    private String legalVerificationNotes;
+    private Instant legalVerifiedAt;
     private Instant createdAt;
-
-    public AthleteResponse() {
-    }
 
     public AthleteResponse(Athlete athlete) {
         if (athlete != null) {
@@ -64,183 +85,14 @@ public class AthleteResponse {
             this.bio = athlete.getBio();
             this.slug = athlete.getSlug();
             this.isPublic = athlete.isPublic();
+            this.identityDocumentType = athlete.getIdentityDocumentType();
+            this.identityDocumentNumber = athlete.getIdentityDocumentNumber();
+            this.identityDocumentFileUrl = athlete.getIdentityDocumentFileUrl();
+            this.hasIdentityDocument = athlete.getIdentityDocumentFileUrl() != null && !athlete.getIdentityDocumentFileUrl().isBlank();
+            this.legalVerificationStatus = athlete.getLegalVerificationStatus();
+            this.legalVerificationNotes = athlete.getLegalVerificationNotes();
+            this.legalVerifiedAt = athlete.getLegalVerifiedAt();
             this.createdAt = athlete.getCreatedAt();
         }
-    }
-
-    public UUID getId() {
-        return id;
-    }
-
-    public void setId(UUID id) {
-        this.id = id;
-    }
-
-    public UUID getTutorId() {
-        return tutorId;
-    }
-
-    public void setTutorId(UUID tutorId) {
-        this.tutorId = tutorId;
-    }
-
-    public String getFirstName() {
-        return firstName;
-    }
-
-    public void setFirstName(String firstName) {
-        this.firstName = firstName;
-    }
-
-    public String getLastName() {
-        return lastName;
-    }
-
-    public void setLastName(String lastName) {
-        this.lastName = lastName;
-    }
-
-    public String getFullName() {
-        return fullName;
-    }
-
-    public void setFullName(String fullName) {
-        this.fullName = fullName;
-    }
-
-    public LocalDate getBirthDate() {
-        return birthDate;
-    }
-
-    public void setBirthDate(LocalDate birthDate) {
-        this.birthDate = birthDate;
-    }
-
-    public int getAge() {
-        return age;
-    }
-
-    public void setAge(int age) {
-        this.age = age;
-    }
-
-    public String getGender() {
-        return gender;
-    }
-
-    public void setGender(String gender) {
-        this.gender = gender;
-    }
-
-    public String getPrimaryPosition() {
-        return primaryPosition;
-    }
-
-    public void setPrimaryPosition(String primaryPosition) {
-        this.primaryPosition = primaryPosition;
-    }
-
-    public String getSecondaryPosition() {
-        return secondaryPosition;
-    }
-
-    public void setSecondaryPosition(String secondaryPosition) {
-        this.secondaryPosition = secondaryPosition;
-    }
-
-    public String getPreferredFoot() {
-        return preferredFoot;
-    }
-
-    public void setPreferredFoot(String preferredFoot) {
-        this.preferredFoot = preferredFoot;
-    }
-
-    public String getNationality() {
-        return nationality;
-    }
-
-    public void setNationality(String nationality) {
-        this.nationality = nationality;
-    }
-
-    public String getSecondaryPassports() {
-        return secondaryPassports;
-    }
-
-    public void setSecondaryPassports(String secondaryPassports) {
-        this.secondaryPassports = secondaryPassports;
-    }
-
-    public ClubResponse getCurrentClub() {
-        return currentClub;
-    }
-
-    public void setCurrentClub(ClubResponse currentClub) {
-        this.currentClub = currentClub;
-    }
-
-    public String getFederationLicenseNumber() {
-        return federationLicenseNumber;
-    }
-
-    public void setFederationLicenseNumber(String federationLicenseNumber) {
-        this.federationLicenseNumber = federationLicenseNumber;
-    }
-
-    public BigDecimal getHeightCm() {
-        return heightCm;
-    }
-
-    public void setHeightCm(BigDecimal heightCm) {
-        this.heightCm = heightCm;
-    }
-
-    public BigDecimal getWeightKg() {
-        return weightKg;
-    }
-
-    public void setWeightKg(BigDecimal weightKg) {
-        this.weightKg = weightKg;
-    }
-
-    public String getProfilePhotoUrl() {
-        return profilePhotoUrl;
-    }
-
-    public void setProfilePhotoUrl(String profilePhotoUrl) {
-        this.profilePhotoUrl = profilePhotoUrl;
-    }
-
-    public String getBio() {
-        return bio;
-    }
-
-    public void setBio(String bio) {
-        this.bio = bio;
-    }
-
-    public String getSlug() {
-        return slug;
-    }
-
-    public void setSlug(String slug) {
-        this.slug = slug;
-    }
-
-    public boolean isPublic() {
-        return isPublic;
-    }
-
-    public void setPublic(boolean aPublic) {
-        isPublic = aPublic;
-    }
-
-    public Instant getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(Instant createdAt) {
-        this.createdAt = createdAt;
     }
 }

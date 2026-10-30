@@ -6,8 +6,39 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import org.springframework.web.multipart.MultipartFile;
 
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class RegisterTutorRequest {
+
+    public RegisterTutorRequest(String fullName, String email, String password, String phoneNumber, Boolean acceptLopnnaTerms) {
+        this.fullName = fullName;
+        this.email = email;
+        this.password = password;
+        this.phoneNumber = phoneNumber;
+        this.acceptLopnnaTerms = acceptLopnnaTerms;
+        this.country = "Venezuela";
+        this.state = "Distrito Capital";
+    }
+
+    @NotBlank(message = "El país es obligatorio")
+    @Pattern(regexp = "^(Venezuela|Colombia|Chile|Perú|Peru|Ecuador|Bolivia)$", message = "El país debe ser uno de los autorizados: Venezuela, Colombia, Chile, Perú, Ecuador, Bolivia")
+    private String country;
+
+    @NotBlank(message = "El estado o provincia es obligatorio")
+    private String state;
+
+    @Size(max = 255, message = "La dirección no puede exceder 255 caracteres")
+    private String address;
 
     @NotBlank(message = "El nombre completo es obligatorio")
     @Size(max = 150, message = "El nombre no puede exceder 150 caracteres")
@@ -26,58 +57,18 @@ public class RegisterTutorRequest {
     @Pattern(regexp = "^\\+[1-9]\\d{7,14}$", message = "El número telefónico debe estar en formato internacional E.164 (ej: +584121234567)")
     private String phoneNumber;
 
-    @NotNull(message = "El consentimiento LOPNNA es obligatorio")
-    @AssertTrue(message = "Debe aceptar obligatoriamente los términos de protección de menores LOPNNA Art. 65")
+    @NotNull(message = "El consentimiento legal de protección de menores es obligatorio")
+    @AssertTrue(message = "Debe aceptar obligatoriamente los términos de protección integral del menor y consentimiento legal")
     private Boolean acceptLopnnaTerms;
 
-    public RegisterTutorRequest() {
-    }
+    @NotBlank(message = "El tipo de documento de identidad es obligatorio")
+    @Size(max = 30)
+    private String idDocumentType;
 
-    public RegisterTutorRequest(String fullName, String email, String password, String phoneNumber, Boolean acceptLopnnaTerms) {
-        this.fullName = fullName;
-        this.email = email;
-        this.password = password;
-        this.phoneNumber = phoneNumber;
-        this.acceptLopnnaTerms = acceptLopnnaTerms;
-    }
+    @NotBlank(message = "El número de documento de identidad es obligatorio")
+    @Size(max = 50)
+    private String idDocumentNumber;
 
-    public String getFullName() {
-        return fullName;
-    }
-
-    public void setFullName(String fullName) {
-        this.fullName = fullName;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
-    }
-
-    public String getPhoneNumber() {
-        return phoneNumber;
-    }
-
-    public void setPhoneNumber(String phoneNumber) {
-        this.phoneNumber = phoneNumber;
-    }
-
-    public Boolean getAcceptLopnnaTerms() {
-        return acceptLopnnaTerms;
-    }
-
-    public void setAcceptLopnnaTerms(Boolean acceptLopnnaTerms) {
-        this.acceptLopnnaTerms = acceptLopnnaTerms;
-    }
+    @NotNull(message = "El archivo del documento de identidad es obligatorio")
+    private MultipartFile idDocumentFile;
 }

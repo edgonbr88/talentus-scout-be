@@ -1,0 +1,14 @@
+FROM eclipse-temurin:21-jre-alpine
+WORKDIR /app
+
+RUN addgroup -S talentus && adduser -S talentus -G talentus && \
+    mkdir -p /app/uploads && chown -R talentus:talentus /app
+
+USER talentus
+
+COPY target/*.jar app.jar
+
+EXPOSE 8080
+
+ENV JAVA_OPTS="-Xms512m -Xmx800m -XX:+UseG1GC -XX:+ExitOnOutOfMemoryError"
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]

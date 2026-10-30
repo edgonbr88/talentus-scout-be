@@ -1,24 +1,38 @@
 package com.talentus.scout.domain.entity;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import org.hibernate.annotations.UuidGenerator;
+
 import java.time.Instant;
 import java.util.UUID;
 
 @Entity
 @Table(name = "tutor_legal_consents")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class TutorLegalConsent {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
+    @UuidGenerator(style = UuidGenerator.Style.VERSION_7)
     private UUID id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "tutor_id", nullable = false)
     private User tutor;
 
+    @Builder.Default
     @Column(name = "accepted_lopnna_terms", nullable = false)
     private boolean acceptedLopnnaTerms = true;
 
+    @Builder.Default
     @Column(name = "terms_version", nullable = false, length = 20)
     private String termsVersion = "1.0";
 
@@ -28,11 +42,17 @@ public class TutorLegalConsent {
     @Column(name = "user_agent", nullable = false, columnDefinition = "TEXT")
     private String userAgent;
 
+    @Column(name = "id_document_type", length = 30)
+    private String idDocumentType;
+
+    @Column(name = "id_document_number", length = 50)
+    private String idDocumentNumber;
+
+    @Column(name = "id_document_file_url", length = 500)
+    private String idDocumentFileUrl;
+
     @Column(name = "accepted_at", nullable = false)
     private Instant acceptedAt;
-
-    public TutorLegalConsent() {
-    }
 
     public TutorLegalConsent(User tutor, boolean acceptedLopnnaTerms, String termsVersion, String ipAddress, String userAgent) {
         this.tutor = tutor;
@@ -48,61 +68,5 @@ public class TutorLegalConsent {
         if (acceptedAt == null) {
             acceptedAt = Instant.now();
         }
-    }
-
-    public UUID getId() {
-        return id;
-    }
-
-    public void setId(UUID id) {
-        this.id = id;
-    }
-
-    public User getTutor() {
-        return tutor;
-    }
-
-    public void setTutor(User tutor) {
-        this.tutor = tutor;
-    }
-
-    public boolean isAcceptedLopnnaTerms() {
-        return acceptedLopnnaTerms;
-    }
-
-    public void setAcceptedLopnnaTerms(boolean acceptedLopnnaTerms) {
-        this.acceptedLopnnaTerms = acceptedLopnnaTerms;
-    }
-
-    public String getTermsVersion() {
-        return termsVersion;
-    }
-
-    public void setTermsVersion(String termsVersion) {
-        this.termsVersion = termsVersion;
-    }
-
-    public String getIpAddress() {
-        return ipAddress;
-    }
-
-    public void setIpAddress(String ipAddress) {
-        this.ipAddress = ipAddress;
-    }
-
-    public String getUserAgent() {
-        return userAgent;
-    }
-
-    public void setUserAgent(String userAgent) {
-        this.userAgent = userAgent;
-    }
-
-    public Instant getAcceptedAt() {
-        return acceptedAt;
-    }
-
-    public void setAcceptedAt(Instant acceptedAt) {
-        this.acceptedAt = acceptedAt;
     }
 }

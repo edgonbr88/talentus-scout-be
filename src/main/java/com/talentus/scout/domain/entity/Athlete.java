@@ -1,6 +1,14 @@
 package com.talentus.scout.domain.entity;
 
+import com.talentus.scout.domain.enums.LegalVerificationStatus;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import org.hibernate.annotations.UuidGenerator;
+
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -8,10 +16,15 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "athletes")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Athlete {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
+    @UuidGenerator(style = UuidGenerator.Style.VERSION_7)
     private UUID id;
 
     @ManyToOne(fetch = FetchType.EAGER, optional = false)
@@ -27,6 +40,7 @@ public class Athlete {
     @Column(name = "birth_date", nullable = false)
     private LocalDate birthDate;
 
+    @Builder.Default
     @Column(name = "gender", nullable = false, length = 10)
     private String gender = "MALE";
 
@@ -39,6 +53,7 @@ public class Athlete {
     @Column(name = "preferred_foot", nullable = false, length = 20)
     private String preferredFoot;
 
+    @Builder.Default
     @Column(name = "nationality", nullable = false, length = 50)
     private String nationality = "Venezolana";
 
@@ -67,57 +82,39 @@ public class Athlete {
     @Column(name = "slug", nullable = false, unique = true, length = 120)
     private String slug;
 
+    @Builder.Default
     @Column(name = "is_public", nullable = false)
     private boolean isPublic = true;
+
+    @Column(name = "identity_document_type", length = 30)
+    private String identityDocumentType;
+
+    @Column(name = "identity_document_number", length = 50)
+    private String identityDocumentNumber;
+
+    @Column(name = "identity_document_file_url", length = 500)
+    private String identityDocumentFileUrl;
+
+    @Enumerated(EnumType.STRING)
+    @Builder.Default
+    @Column(name = "legal_verification_status", nullable = false, length = 30)
+    private LegalVerificationStatus legalVerificationStatus = LegalVerificationStatus.PENDING_REVIEW;
+
+    @Column(name = "legal_verification_notes", columnDefinition = "TEXT")
+    private String legalVerificationNotes;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "legal_verified_by")
+    private User legalVerifiedBy;
+
+    @Column(name = "legal_verified_at")
+    private Instant legalVerifiedAt;
 
     @Column(name = "created_at", updatable = false)
     private Instant createdAt;
 
     @Column(name = "updated_at")
     private Instant updatedAt;
-
-    public Athlete() {
-    }
-
-    public Athlete(
-            User tutor,
-            String firstName,
-            String lastName,
-            LocalDate birthDate,
-            String gender,
-            String primaryPosition,
-            String secondaryPosition,
-            String preferredFoot,
-            String nationality,
-            String secondaryPassports,
-            ClubOrganization currentClub,
-            String federationLicenseNumber,
-            BigDecimal heightCm,
-            BigDecimal weightKg,
-            String bio,
-            String slug,
-            boolean isPublic
-    ) {
-        this.tutor = tutor;
-        this.firstName = firstName;
-        this.lastName = lastName;
-        this.birthDate = birthDate;
-        this.gender = gender != null ? gender : "MALE";
-        this.primaryPosition = primaryPosition;
-        this.secondaryPosition = secondaryPosition;
-        this.preferredFoot = preferredFoot;
-        this.nationality = nationality != null ? nationality : "Venezolana";
-        this.secondaryPassports = secondaryPassports;
-        this.currentClub = currentClub;
-        this.federationLicenseNumber = federationLicenseNumber;
-        this.heightCm = heightCm;
-        this.weightKg = weightKg;
-        this.bio = bio;
-        this.slug = slug;
-        this.isPublic = isPublic;
-        this.createdAt = Instant.now();
-        this.updatedAt = Instant.now();
-    }
 
     @PrePersist
     protected void onCreate() {
@@ -132,173 +129,5 @@ public class Athlete {
     @PreUpdate
     protected void onUpdate() {
         updatedAt = Instant.now();
-    }
-
-    public UUID getId() {
-        return id;
-    }
-
-    public void setId(UUID id) {
-        this.id = id;
-    }
-
-    public User getTutor() {
-        return tutor;
-    }
-
-    public void setTutor(User tutor) {
-        this.tutor = tutor;
-    }
-
-    public String getFirstName() {
-        return firstName;
-    }
-
-    public void setFirstName(String firstName) {
-        this.firstName = firstName;
-    }
-
-    public String getLastName() {
-        return lastName;
-    }
-
-    public void setLastName(String lastName) {
-        this.lastName = lastName;
-    }
-
-    public LocalDate getBirthDate() {
-        return birthDate;
-    }
-
-    public void setBirthDate(LocalDate birthDate) {
-        this.birthDate = birthDate;
-    }
-
-    public String getGender() {
-        return gender;
-    }
-
-    public void setGender(String gender) {
-        this.gender = gender;
-    }
-
-    public String getPrimaryPosition() {
-        return primaryPosition;
-    }
-
-    public void setPrimaryPosition(String primaryPosition) {
-        this.primaryPosition = primaryPosition;
-    }
-
-    public String getSecondaryPosition() {
-        return secondaryPosition;
-    }
-
-    public void setSecondaryPosition(String secondaryPosition) {
-        this.secondaryPosition = secondaryPosition;
-    }
-
-    public String getPreferredFoot() {
-        return preferredFoot;
-    }
-
-    public void setPreferredFoot(String preferredFoot) {
-        this.preferredFoot = preferredFoot;
-    }
-
-    public String getNationality() {
-        return nationality;
-    }
-
-    public void setNationality(String nationality) {
-        this.nationality = nationality;
-    }
-
-    public String getSecondaryPassports() {
-        return secondaryPassports;
-    }
-
-    public void setSecondaryPassports(String secondaryPassports) {
-        this.secondaryPassports = secondaryPassports;
-    }
-
-    public ClubOrganization getCurrentClub() {
-        return currentClub;
-    }
-
-    public void setCurrentClub(ClubOrganization currentClub) {
-        this.currentClub = currentClub;
-    }
-
-    public String getFederationLicenseNumber() {
-        return federationLicenseNumber;
-    }
-
-    public void setFederationLicenseNumber(String federationLicenseNumber) {
-        this.federationLicenseNumber = federationLicenseNumber;
-    }
-
-    public BigDecimal getHeightCm() {
-        return heightCm;
-    }
-
-    public void setHeightCm(BigDecimal heightCm) {
-        this.heightCm = heightCm;
-    }
-
-    public BigDecimal getWeightKg() {
-        return weightKg;
-    }
-
-    public void setWeightKg(BigDecimal weightKg) {
-        this.weightKg = weightKg;
-    }
-
-    public String getProfilePhotoUrl() {
-        return profilePhotoUrl;
-    }
-
-    public void setProfilePhotoUrl(String profilePhotoUrl) {
-        this.profilePhotoUrl = profilePhotoUrl;
-    }
-
-    public String getBio() {
-        return bio;
-    }
-
-    public void setBio(String bio) {
-        this.bio = bio;
-    }
-
-    public String getSlug() {
-        return slug;
-    }
-
-    public void setSlug(String slug) {
-        this.slug = slug;
-    }
-
-    public boolean isPublic() {
-        return isPublic;
-    }
-
-    public void setPublic(boolean aPublic) {
-        isPublic = aPublic;
-    }
-
-    public Instant getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(Instant createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public Instant getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public void setUpdatedAt(Instant updatedAt) {
-        this.updatedAt = updatedAt;
     }
 }

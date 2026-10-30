@@ -18,6 +18,11 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity
@@ -37,6 +42,9 @@ public class SecurityConfig {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(Customizer.withDefaults())
+                .headers(headers -> headers
+                        .frameOptions(frameOptions -> frameOptions.sameOrigin())
+                )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
@@ -44,6 +52,16 @@ public class SecurityConfig {
                                 "/api/v1/health/**",
                                 "/api/v1/clubs/**",
                                 "/api/v1/athletes/public/**",
+                                "/api/v1/athletes/*/videos",
+                                "/api/v1/videos/webhook",
+                                "/api/v1/certifications/token/**",
+                                "/api/v1/payments/config",
+                                "/api/v1/payments/bcv-rate",
+                                "/api/v1/payments/coupons/validate",
+                                "/api/v1/payments/binance-pay/webhook",
+                                "/api/v1/payments/binance-pay/mock-webhook",
+                                "/api/v1/payments/binance-pay/mock-checkout/**",
+                                "/uploads/**",
                                 "/actuator/**",
                                 "/error"
                         ).permitAll()
@@ -70,5 +88,39 @@ public class SecurityConfig {
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOriginPatterns(List.of(
+                "http://localhost:*",
+                "http://127.0.0.1:*",
+                "http://localhost",
+                "http://127.0.0.1",
+                "https://talentusscout.com",
+                "https://www.talentusscout.com",
+                "https://*.talentusscout.com"
+        ));
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH", "HEAD"));
+        configuration.setAllowedHeaders(List.of(
+                "Authorization",
+                "Content-Type",
+                "Range",
+                "Accept",
+                "Origin",
+                "X-Requested-With"
+        ));
+        configuration.setExposedHeaders(List.of(
+                "Content-Range",
+                "Accept-Ranges",
+                "Content-Length",
+                "Content-Disposition"
+        ));
+        configuration.setAllowCredentials(true);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
     }
 }

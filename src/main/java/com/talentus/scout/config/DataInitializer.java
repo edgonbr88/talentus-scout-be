@@ -9,6 +9,8 @@ import com.talentus.scout.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.core.env.Environment;
+import org.springframework.core.env.Profiles;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
@@ -22,44 +24,64 @@ public class DataInitializer implements CommandLineRunner {
     private final UserRepository userRepository;
     private final ClubOrganizationRepository clubOrganizationRepository;
     private final PasswordEncoder passwordEncoder;
+    private final Environment environment;
 
     public DataInitializer(
             UserRepository userRepository,
             ClubOrganizationRepository clubOrganizationRepository,
-            PasswordEncoder passwordEncoder
+            PasswordEncoder passwordEncoder,
+            Environment environment
     ) {
         this.userRepository = userRepository;
         this.clubOrganizationRepository = clubOrganizationRepository;
         this.passwordEncoder = passwordEncoder;
+        this.environment = environment;
     }
 
     @Override
     public void run(String... args) {
-        // 1. Usuarios Semilla
-        if (!userRepository.existsByEmail("admin@talentus.app")) {
-            User admin = new User(
-                    "admin@talentus.app",
-                    passwordEncoder.encode("AdminPassword2026*"),
-                    "Administrador Talentus",
-                    "+584120000000",
-                    UserRole.ADMIN,
-                    AccountStatus.ACTIVE
-            );
-            userRepository.save(admin);
-            log.info("[DataInitializer] Usuario seed ADMIN creado: admin@talentus.app");
+        boolean isProd = environment.acceptsProfiles(Profiles.of("prod", "production"));
+
+        // 1. Usuarios Administradores de Pruebas (Exclusivo para ambientes de pruebas y desarrollo local)
+        if (!isProd) {
+            if (!userRepository.existsByEmail("admin@talentus.app")) {
+                User admin = User.builder()
+                        .email("admin@talentus.app")
+                        .passwordHash(passwordEncoder.encode("AdminPassword2026*"))
+                        .fullName("Administrador Talentus")
+                        .phoneNumber("+584120000000")
+                        .role(UserRole.ADMIN)
+                        .status(AccountStatus.ACTIVE)
+                        .build();
+                userRepository.save(admin);
+                log.info("[DataInitializer] Usuario seed ADMIN de pruebas creado: admin@talentus.app");
+            }
+        } else {
+            // En producción, asegurar que el usuario de pruebas no permanezca en la base de datos
+            userRepository.findByEmail("admin@talentus.app").ifPresent(admin -> {
+                userRepository.delete(admin);
+                log.info("[DataInitializer] Usuario seed de pruebas admin@talentus.app purgado de producción");
+            });
         }
 
-        if (!userRepository.existsByEmail("carlos.perez@talentus.app")) {
-            User tutor = new User(
-                    "carlos.perez@talentus.app",
-                    passwordEncoder.encode("PasswordSeguro2026*"),
-                    "Carlos Pérez",
-                    "+584121234567",
-                    UserRole.TUTOR,
-                    AccountStatus.ACTIVE
-            );
-            userRepository.save(tutor);
-            log.info("[DataInitializer] Usuario seed TUTOR creado: carlos.perez@talentus.app");
+        List<String> prodAdminEmails = List.of(
+                "edgar.gonzalez@talentusscout.com",
+                "brandon.garcia@talentusscout.com"
+        );
+        for (String email : prodAdminEmails) {
+            if (!userRepository.existsByEmail(email)) {
+                String name = email.startsWith("edgar") ? "Edgar González" : "Brandon García";
+                User prodAdmin = User.builder()
+                        .email(email)
+                        .passwordHash(passwordEncoder.encode("TalentusAdmin2026*"))
+                        .fullName(name)
+                        .phoneNumber("+584120000000")
+                        .role(UserRole.ADMIN)
+                        .status(AccountStatus.ACTIVE)
+                        .build();
+                userRepository.save(prodAdmin);
+                log.info("[DataInitializer] Usuario seed ADMIN de producción creado: {}", email);
+            }
         }
 
         // 2. Clubes Semilla

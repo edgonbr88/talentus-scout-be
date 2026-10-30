@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Solicitud de Certificación Oficial — Talentus Scout</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #080D1A;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      color: #E2E8F0;
+    }
+    .wrapper {
+      width: 100%;
+      background-color: #080D1A;
+      padding: 40px 10px;
+    }
+    .container {
+      max-width: 580px;
+      margin: 0 auto;
+      background-color: #0E1527;
+      border: 1px solid #1E293B;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+    .header {
+      background: linear-gradient(135deg, #0F172A 0%, #1E1B4B 100%);
+      padding: 30px 24px;
+      text-align: center;
+      border-bottom: 1px solid #312E81;
+    }
+    .brand-title {
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      color: #FFFFFF;
+      margin: 0;
+      text-transform: uppercase;
+    }
+    .brand-title span {
+      color: #10B981;
+    }
+    .badge-tag {
+      display: inline-block;
+      margin-top: 10px;
+      background-color: rgba(99, 102, 241, 0.2);
+      border: 1px solid #6366F1;
+      color: #A5B4FC;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+    }
+    .content {
+      padding: 30px 24px;
+    }
+    .greeting {
+      font-size: 16px;
+      margin: 0 0 16px;
+      color: #F8FAFC;
+    }
+    .paragraph {
+      font-size: 14px;
+      line-height: 1.6;
+      color: #94A3B8;
+      margin: 0 0 20px;
+    }
+    .highlight-card {
+      background-color: #131D35;
+      border-left: 4px solid #10B981;
+      border-radius: 6px;
+      padding: 16px;
+      margin: 20px 0;
+    }
+    .highlight-row {
+      font-size: 13px;
+      margin-bottom: 6px;
+      color: #CBD5E1;
+    }
+    .highlight-row:last-child {
+      margin-bottom: 0;
+    }
+    .highlight-label {
+      color: #64748B;
+      font-weight: 600;
+      margin-right: 6px;
+    }
+    .highlight-value {
+      font-weight: 700;
+      color: #FFFFFF;
+    }
+    .cta-container {
+      text-align: center;
+      margin: 30px 0 20px;
+    }
+    .cta-button {
+      display: inline-block;
+      background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+      color: #FFFFFF !important;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 15px;
+      padding: 14px 28px;
+      border-radius: 8px;
+      box-shadow: 0 4px 15px rgba(16, 185, 129, 0.35);
+      letter-spacing: 0.02em;
+    }
+    .notice {
+      font-size: 12px;
+      color: #64748B;
+      text-align: center;
+      margin-top: 15px;
+      line-height: 1.4;
+    }
+    .footer {
+      background-color: #0A0F1D;
+      padding: 20px 24px;
+      text-align: center;
+      border-top: 1px solid #1E293B;
+      font-size: 11px;
+      color: #475569;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <div class="container">
+      <div class="header">
+        <img src="https://i.imgur.com/9j8oQ2B.png" alt="Talentus Scout" style="max-height: 48px; width: auto; margin: 0 auto 12px auto; display: block;" />
+        <h1 class="brand-title">TALENTUS <span>SCOUT</span></h1>
+        <div class="badge-tag">SOLICITUD DE RESPALDO OFICIAL</div>
+      </div>
+      <div class="content">
+        <p class="greeting">Estimado(a) <strong>##RECIPIENT_NAME##</strong>,</p>
+        <p class="paragraph">
+          Ha recibido una solicitud oficial de certificación para validar antecedentes y métricas deportivas en la plataforma <strong>Talentus Scout</strong>, la red de proyección y scouting deportivo juvenil.
+        </p>
+
+        <div class="highlight-card">
+          <div class="highlight-row">
+            <span class="highlight-label">Atleta:</span>
+            <span class="highlight-value">##ATHLETE_NAME##</span>
+          </div>
+          <div class="highlight-row">
+            <span class="highlight-label">Representante Solicitante:</span>
+            <span class="highlight-value">##TUTOR_NAME##</span>
+          </div>
+          <div class="highlight-row">
+            <span class="highlight-label">Tipo de Certificación:</span>
+            <span class="highlight-value">##BADGE_TYPE_LABEL##</span>
+          </div>
+          <div class="highlight-row">
+            <span class="highlight-label">Título del Aval:</span>
+            <span class="highlight-value">##BADGE_TITLE##</span>
+          </div>
+        </div>
+
+        <p class="paragraph">
+          No requiere crear una cuenta ni registrar contraseñas. Para validar o completar los datos solicitados (ej. medidas antropométricas, carnet o logros), por favor ingrese mediante el siguiente enlace seguro:
+        </p>
+
+        <div class="cta-container">
+          <a href="##CERTIFICATION_LINK##" class="cta-button" target="_blank">
+            Completar Certificación Oficial →
+          </a>
+        </div>
+
+        <p class="notice">
+          Este enlace es confidencial, de un solo uso y expira en <strong>##EXPIRATION_DAYS## días</strong>.
+          <br>
+          Si no reconoce esta solicitud, puede desestimar este mensaje.
+        </p>
+      </div>
+      <div class="footer">
+        © 2026 Talentus Scout • Red Integral de Scouting y Protección al Menor en el Deporte
+      </div>
+    </div>
+  </div>
+</body>
+</html>

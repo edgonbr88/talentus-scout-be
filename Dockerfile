@@ -10,7 +10,7 @@ RUN ./mvnw clean package -DskipTests -B
 # Stage 2: Runtime
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
-RUN addgroup -S talentus && adduser -S talentus -G talentus
+RUN addgroup -S talentus && adduser -S talentus -G talentus && mkdir -p /app/uploads && chown -R talentus:talentus /app
 USER talentus
 COPY --from=build /app/target/*.jar app.jar
 EXPOSE 8080
