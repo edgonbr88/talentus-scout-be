@@ -4,10 +4,14 @@ server:
 spring:
   application:
     name: talentus-scout-be
+  servlet:
+    multipart:
+      max-file-size: 500MB
+      max-request-size: 500MB
   datasource:
-    url: jdbc:postgresql://${DB_HOST:}:${DB_PORT:}/${DB_NAME:}?sslmode=disable
-    username: ${DB_USER:}
-    password: ${DB_PWD:}
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:talentus_scout_dev}?sslmode=disable
+    username: ${DB_USER:postgres}
+    password: ${DB_PWD:postgrespassword2026}
     driver-class-name: org.postgresql.Driver
   jpa:
     open-in-view: false
@@ -19,31 +23,52 @@ spring:
         jdbc:
           lob:
             non_contextual_creation: true
-
 security:
   jwt:
-    secret-key: ${JWT_SECRET_KEY:}
+    secret-key: ${JWT_SECRET_KEY:super_secret_jwt_key_local_64_chars_talentus_scout_2026_dev_for_security}
     expiration-time: 86400000 # 24h
 
 talentus:
   video:
-    provider: ${VIDEO_STREAM_PROVIDER:}
-    upload-dir: ${VIDEO_UPLOAD_DIR:}
+    provider: ${VIDEO_STREAM_PROVIDER:mock}
+    upload-dir: ${VIDEO_UPLOAD_DIR:uploads/videos}
     max-size-bytes: 524288000 # 500MB
     mock:
-      base-url: ${APP_BASE_URL:}
+      base-url: ${APP_BASE_URL:http://localhost:8080}
     cloudflare:
       account-id: ${CLOUDFLARE_ACCOUNT_ID:}
       api-token: ${CLOUDFLARE_API_TOKEN:}
       webhook-secret: ${CLOUDFLARE_WEBHOOK_SECRET:}
   frontend:
-    base-url: ${FRONTEND_BASE_URL:}
-    certify-url: ${FRONTEND_CERTIFY_URL:}
+    base-url: ${FRONTEND_BASE_URL:http://localhost}
+    certify-url: ${FRONTEND_CERTIFY_URL:http://localhost/certify}
   mail:
-    enabled: ${MAIL_ENABLED:false}
-    from: ${MAIL_FROM:}
-    server: ${MAIL_SERVER:localhost}
-    port: ${MAIL_PORT:587}
-    username: ${MAIL_USERNAME:}
-    password: ${MAIL_PASSWORD:}
-
+    enabled: ${MAIL_ENABLED:true}
+    from: ${MAIL_FROM:contacto@talentusscout.com}
+    api-key: ${RESEND_API_KEY:}
+    branding:
+      logo-url: ${TALENTUS_MAIL_LOGO_URL:https://i.imgur.com/9j8oQ2B.png}
+  payments:
+    pago-movil:
+      bank-name: ${PAGO_MOVIL_BANK:Banco Nacional de Crédito (BNC)}
+      phone-number: ${PAGO_MOVIL_PHONE:04141234567}
+      id-number: ${PAGO_MOVIL_ID:J-50123456-7}
+      account-holder: ${PAGO_MOVIL_HOLDER:Talentus Scout C.A.}
+    bcv:
+      api-url: ${BCV_API_URL:https://ve.dolarapi.com/v1/dolares/oficial}
+      fallback-rate: ${BCV_FALLBACK_RATE:45.50}
+      cache-ttl-minutes: 360
+    binance-pay:
+      enabled: ${BINANCE_PAY_ENABLED:true}
+      api-key: ${BINANCE_PAY_API_KEY:talentus_binance_mock_key}
+      secret-key: ${BINANCE_PAY_SECRET_KEY:talentus_binance_mock_secret}
+      merchant-id: ${BINANCE_PAY_MERCHANT_ID:talentus_merchant_001}
+      base-url: ${BINANCE_PAY_BASE_URL:https://bpay.binanceapi.com}
+      sandbox: ${BINANCE_PAY_SANDBOX:true}
+      return-url: ${BINANCE_PAY_RETURN_URL:http://localhost:4200/dashboard?payment=success}
+      cancel-url: ${BINANCE_PAY_CANCEL_URL:http://localhost:4200/dashboard?payment=cancelled}
+    binance:
+      pay-id: ${BINANCE_PAY_ID:283918273}
+      wallet-address: ${BINANCE_WALLET_ADDRESS:TLsV5289FjK93kdJ8193jd93kd9}
+      network: ${BINANCE_NETWORK:USDT (TRC-20 / BEP-20)}
+      qr-image-url: ${BINANCE_QR_IMAGE_URL:/assets/images/binance-qr-sample.png}
