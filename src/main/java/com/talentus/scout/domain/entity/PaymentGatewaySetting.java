@@ -62,6 +62,21 @@ public class PaymentGatewaySetting {
     @Column(name = "binance_qr_image_url")
     private String binanceQrImageUrl;
 
+    @Column(name = "zelle_enabled", nullable = false)
+    @Builder.Default
+    private Boolean zelleEnabled = true;
+
+    @Column(name = "zelle_email", length = 150)
+    @Builder.Default
+    private String zelleEmail = "pagos@talentusscout.com";
+
+    @Column(name = "zelle_account_holder", length = 150)
+    @Builder.Default
+    private String zelleAccountHolder = "Talentus Scout LLC";
+
+    @Column(name = "zelle_qr_image_url")
+    private String zelleQrImageUrl;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private Instant createdAt;

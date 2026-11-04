@@ -17,6 +17,7 @@ import com.talentus.scout.web.dto.AthleteSubscriptionStatusResponse;
 import com.talentus.scout.web.dto.PaymentTransactionResponse;
 import com.talentus.scout.web.dto.ReportBinanceManualPaymentRequest;
 import com.talentus.scout.web.dto.ReportPagoMovilRequest;
+import com.talentus.scout.web.dto.ReportZellePaymentRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.AccessDeniedException;
@@ -219,6 +220,105 @@ public class PaymentService {
             discountCodeRepository.save(discountCode);
         }
         log.info("Reporte manual de pago Binance registrado con ID: {}", saved.getId());
+
+        return mapToResponse(saved);
+    }
+
+    @Transactional
+    public PaymentTransactionResponse reportZellePayment(UUID tutorId, ReportZellePaymentRequest request) {
+        log.info("Iniciando reporte manual de pago Zelle para atleta: {}", request.getAthleteId());
+
+        String ref = request.getReferenceNumber().trim();
+        if (paymentTransactionRepository.existsByReferenceNumber(ref)) {
+            throw new DuplicatePaymentReferenceException(
+                    "El número de confirmación de Zelle '" + ref + "' ya ha sido registrado previamente.");
+        }
+
+        Athlete athlete = athleteRepository.findById(request.getAthleteId())
+                .orElseThrow(() -> new IllegalArgumentException("El atleta especificado no existe."));
+
+        if (!athlete.getTutor().getId().equals(tutorId)) {
+            throw new AccessDeniedException("No tienes autorización para reportar pagos de este atleta.");
+        }
+
+        SubscriptionPlan plan = subscriptionPlanRepository.findById(request.getPlanId())
+                .orElseThrow(() -> new IllegalArgumentException("El plan seleccionado no es válido."));
+
+        if (!Boolean.TRUE.equals(plan.getIsActive())) {
+            throw new IllegalArgumentException("El plan seleccionado no está activo actualmente.");
+        }
+
+        // Procesar código de descuento si fue suministrado
+        com.talentus.scout.domain.entity.DiscountCode discountCode = null;
+        BigDecimal discountAmountUsd = BigDecimal.ZERO;
+        BigDecimal effectiveAmountUsd = plan.getPriceUsd();
+
+        if (request.getDiscountCode() != null && !request.getDiscountCode().trim().isEmpty()) {
+            String codeStr = request.getDiscountCode().trim().toUpperCase();
+            Optional<com.talentus.scout.domain.entity.DiscountCode> codeOpt = discountCodeRepository.findByCodeIgnoreCase(codeStr);
+            if (codeOpt.isPresent() && Boolean.TRUE.equals(codeOpt.get().getIsActive())) {
+                discountCode = codeOpt.get();
+                if (discountCode.getDiscountType() == com.talentus.scout.domain.enums.DiscountType.PERCENTAGE) {
+                    BigDecimal pct = discountCode.getDiscountValue().divide(BigDecimal.valueOf(100), 4, java.math.RoundingMode.HALF_UP);
+                    discountAmountUsd = plan.getPriceUsd().multiply(pct).setScale(2, java.math.RoundingMode.HALF_UP);
+                } else {
+                    discountAmountUsd = discountCode.getDiscountValue().min(plan.getPriceUsd()).setScale(2, java.math.RoundingMode.HALF_UP);
+                }
+                effectiveAmountUsd = plan.getPriceUsd().subtract(discountAmountUsd).max(BigDecimal.ZERO);
+            }
+        }
+
+        LocalDate pDate = request.getPaymentDate() != null ? request.getPaymentDate() : LocalDate.now();
+
+        String holder = request.getOriginAccountHolder() != null ? request.getOriginAccountHolder().trim() : "Titular Zelle";
+        String contact = (request.getOriginEmailOrPhone() != null && !request.getOriginEmailOrPhone().isBlank())
+                ? request.getOriginEmailOrPhone().trim()
+                : null;
+
+        String originBankStr = "Zelle (" + holder + (contact != null ? " - " + contact : "") + ")";
+        if (originBankStr.length() > 100) {
+            originBankStr = originBankStr.substring(0, 100);
+        }
+        String originPhoneStr = null;
+        if (contact != null) {
+            originPhoneStr = contact.length() > 30 ? contact.substring(0, 30) : contact;
+        }
+
+        PaymentTransaction transaction = PaymentTransaction.builder()
+                .user(athlete.getTutor())
+                .athlete(athlete)
+                .plan(plan)
+                .method(PaymentMethod.ZELLE)
+                .amountUsd(effectiveAmountUsd)
+                .amountVes(BigDecimal.ZERO)
+                .bcvExchangeRate(BigDecimal.ZERO)
+                .referenceNumber(ref)
+                .gatewayOrderId(ref)
+                .paymentDate(pDate)
+                .originBank(originBankStr)
+                .originPhone(originPhoneStr)
+                .status(PaymentStatus.PENDING_AUDIT)
+                .discountCode(discountCode)
+                .discountAmountUsd(discountAmountUsd)
+                .build();
+
+        PaymentTransaction saved = paymentTransactionRepository.save(transaction);
+
+        if (discountCode != null) {
+            com.talentus.scout.domain.entity.DiscountCodeRedemption redemption = com.talentus.scout.domain.entity.DiscountCodeRedemption.builder()
+                    .discountCode(discountCode)
+                    .user(athlete.getTutor())
+                    .athlete(athlete)
+                    .paymentTransaction(saved)
+                    .originalAmountUsd(plan.getPriceUsd())
+                    .discountedAmountUsd(discountAmountUsd)
+                    .finalAmountUsd(effectiveAmountUsd)
+                    .build();
+            discountCodeRedemptionRepository.save(redemption);
+            discountCode.setCurrentUses(discountCode.getCurrentUses() + 1);
+            discountCodeRepository.save(discountCode);
+        }
+        log.info("Reporte manual de pago Zelle registrado con ID: {}", saved.getId());
 
         return mapToResponse(saved);
     }

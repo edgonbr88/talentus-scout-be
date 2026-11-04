@@ -86,6 +86,18 @@ public class PaymentController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
+    @PostMapping("/zelle/report")
+    @PreAuthorize("hasAnyRole('TUTOR', 'ADMIN')")
+    public ResponseEntity<PaymentTransactionResponse> reportZellePayment(
+            Authentication authentication,
+            @Valid @RequestBody ReportZellePaymentRequest request
+    ) {
+        User user = userRepository.findByEmail(authentication.getName())
+                .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado."));
+        PaymentTransactionResponse response = paymentService.reportZellePayment(user.getId(), request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
     @PostMapping("/binance-pay/create-order")
     @PreAuthorize("hasAnyRole('TUTOR', 'ADMIN')")
     public ResponseEntity<CreateBinanceOrderResponse> createBinanceOrder(

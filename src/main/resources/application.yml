@@ -72,3 +72,7 @@ talentus:
       wallet-address: ${BINANCE_WALLET_ADDRESS:TLsV5289FjK93kdJ8193jd93kd9}
       network: ${BINANCE_NETWORK:USDT (TRC-20 / BEP-20)}
       qr-image-url: ${BINANCE_QR_IMAGE_URL:/assets/images/binance-qr-sample.png}
+    zelle:
+      email: ${ZELLE_EMAIL:pagos@talentusscout.com}
+      account-holder: ${ZELLE_ACCOUNT_HOLDER:Talentus Scout LLC}
+      qr-image-url: ${ZELLE_QR_IMAGE_URL:}

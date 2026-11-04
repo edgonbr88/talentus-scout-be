@@ -31,4 +31,9 @@ public class PaymentConfigResponse {
     private Boolean pagoMovilEnabled = true;
     @Builder.Default
     private Boolean binanceManualEnabled = true;
+    @Builder.Default
+    private Boolean zelleEnabled = true;
+    private String zelleEmail;
+    private String zelleAccountHolder;
+    private String zelleQrImageUrl;
 }

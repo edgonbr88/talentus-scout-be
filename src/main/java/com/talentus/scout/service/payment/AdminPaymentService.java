@@ -48,6 +48,7 @@ public class AdminPaymentService {
         long rejected = paymentTransactionRepository.countByStatus(PaymentStatus.REJECTED);
         long binanceApproved = paymentTransactionRepository.countByMethodAndStatus(PaymentMethod.BINANCE_PAY, PaymentStatus.APPROVED);
         long pagoMovilApproved = paymentTransactionRepository.countByMethodAndStatus(PaymentMethod.PAGO_MOVIL, PaymentStatus.APPROVED);
+        long zelleApproved = paymentTransactionRepository.countByMethodAndStatus(PaymentMethod.ZELLE, PaymentStatus.APPROVED);
 
         return AdminPaymentSummaryResponse.builder()
                 .totalRevenueUsd(sumUsd != null ? sumUsd : BigDecimal.ZERO)
@@ -57,6 +58,7 @@ public class AdminPaymentService {
                 .rejectedCount(rejected)
                 .binancePayApprovedCount(binanceApproved)
                 .pagoMovilApprovedCount(pagoMovilApproved)
+                .zelleApprovedCount(zelleApproved)
                 .build();
     }
 

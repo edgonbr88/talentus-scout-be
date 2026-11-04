@@ -26,5 +26,9 @@ public class PaymentGatewaySettingsDto {
     private String binanceWalletAddress;
     private String binanceNetwork;
     private String binanceQrImageUrl;
+    private Boolean zelleEnabled;
+    private String zelleEmail;
+    private String zelleAccountHolder;
+    private String zelleQrImageUrl;
     private Instant updatedAt;
 }

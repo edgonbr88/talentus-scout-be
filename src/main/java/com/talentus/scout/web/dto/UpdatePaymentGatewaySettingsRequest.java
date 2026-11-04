@@ -38,4 +38,11 @@ public class UpdatePaymentGatewaySettingsRequest {
     private String binanceWalletAddress;
 
     private String binanceNetwork;
+
+    @Builder.Default
+    private Boolean zelleEnabled = true;
+
+    private String zelleEmail;
+
+    private String zelleAccountHolder;
 }

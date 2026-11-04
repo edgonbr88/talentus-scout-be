@@ -373,4 +373,72 @@ class PaymentControllerIntegrationTest {
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.error", is("CONFLICT")));
     }
+
+    @Test
+    void reportZellePaymentAndAdminApproval_CompleteWorkflow() throws Exception {
+        String zelleRef = "ZELLE-CONF-" + System.currentTimeMillis();
+        com.talentus.scout.web.dto.ReportZellePaymentRequest req = com.talentus.scout.web.dto.ReportZellePaymentRequest.builder()
+                .athleteId(testAthlete.getId())
+                .planId("PRO_MONTHLY")
+                .referenceNumber(zelleRef)
+                .originAccountHolder("Roberto Rivas")
+                .originEmailOrPhone("roberto.rivas@usbank.com")
+                .paymentDate(LocalDate.now())
+                .build();
+
+        String txResp = mockMvc.perform(post("/api/v1/payments/zelle/report")
+                        .header("Authorization", "Bearer " + tutorToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.method", is("ZELLE")))
+                .andExpect(jsonPath("$.status", is("PENDING_AUDIT")))
+                .andExpect(jsonPath("$.referenceNumber", is(zelleRef)))
+                .andExpect(jsonPath("$.amountUsd", is(5.0)))
+                .andExpect(jsonPath("$.originBank", containsString("Roberto Rivas")))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        UUID transactionId = UUID.fromString(objectMapper.readTree(txResp).get("id").asText());
+
+        // Verificar que aparece en pendientes y el admin lo aprueba
+        mockMvc.perform(post("/api/v1/admin/payments/" + transactionId + "/approve")
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status", is("APPROVED")))
+                .andExpect(jsonPath("$.method", is("ZELLE")));
+
+        // Verificar que la suscripción del atleta se activa
+        mockMvc.perform(get("/api/v1/payments/athlete/" + testAthlete.getId() + "/status")
+                        .header("Authorization", "Bearer " + tutorToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status", is("ACTIVE")));
+    }
+
+    @Test
+    void reportZellePayment_DuplicateReference_Returns409() throws Exception {
+        String zelleRef = "DUP-ZELLE-" + System.currentTimeMillis();
+        com.talentus.scout.web.dto.ReportZellePaymentRequest req = com.talentus.scout.web.dto.ReportZellePaymentRequest.builder()
+                .athleteId(testAthlete.getId())
+                .planId("PRO_MONTHLY")
+                .referenceNumber(zelleRef)
+                .originAccountHolder("Elena Mendoza")
+                .originEmailOrPhone("elena@zelle.com")
+                .paymentDate(LocalDate.now())
+                .build();
+
+        mockMvc.perform(post("/api/v1/payments/zelle/report")
+                        .header("Authorization", "Bearer " + tutorToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isCreated());
+
+        mockMvc.perform(post("/api/v1/payments/zelle/report")
+                        .header("Authorization", "Bearer " + tutorToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.error", is("CONFLICT")));
+    }
 }

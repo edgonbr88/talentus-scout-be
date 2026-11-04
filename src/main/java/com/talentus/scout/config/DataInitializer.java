@@ -113,8 +113,14 @@ public class DataInitializer implements CommandLineRunner {
                     planId.startsWith("PRO_UPDATABLE_") ||
                     "plan-pro-mensual".equals(planId)
             )) {
-                subscriptionPlanRepository.delete(plan);
-                log.info("[DataInitializer] Plan de pruebas eliminado de la base de datos: {}", planId);
+                try {
+                    subscriptionPlanRepository.delete(plan);
+                    log.info("[DataInitializer] Plan de pruebas eliminado de la base de datos: {}", planId);
+                } catch (Exception e) {
+                    plan.setIsActive(false);
+                    subscriptionPlanRepository.save(plan);
+                    log.info("[DataInitializer] Plan de pruebas desactivado por referencias activas: {}", planId);
+                }
             }
         });
 

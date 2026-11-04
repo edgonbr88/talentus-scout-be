@@ -86,7 +86,9 @@ class AdminPaymentGatewayConfigControllerTest {
                 .andExpect(jsonPath("$.pagoMovilBank", notNullValue()))
                 .andExpect(jsonPath("$.pagoMovilPhone", notNullValue()))
                 .andExpect(jsonPath("$.pagoMovilEnabled", notNullValue()))
-                .andExpect(jsonPath("$.binanceManualEnabled", notNullValue()));
+                .andExpect(jsonPath("$.binanceManualEnabled", notNullValue()))
+                .andExpect(jsonPath("$.zelleEnabled", notNullValue()))
+                .andExpect(jsonPath("$.zelleEmail", notNullValue()));
     }
 
     @Test
@@ -110,6 +112,9 @@ class AdminPaymentGatewayConfigControllerTest {
                 .binancePayId("998877665")
                 .binanceWalletAddress("TXabcdef1234567890walletAddressUSDT")
                 .binanceNetwork("USDT (TRC-20)")
+                .zelleEnabled(true)
+                .zelleEmail("zelle@talentus.app")
+                .zelleAccountHolder("Talentus Holdings LLC")
                 .build();
 
         mockMvc.perform(put("/api/v1/admin/payments/gateway-settings")
@@ -120,7 +125,10 @@ class AdminPaymentGatewayConfigControllerTest {
                 .andExpect(jsonPath("$.pagoMovilEnabled", is(false)))
                 .andExpect(jsonPath("$.pagoMovilBank", is("Banco Mercantil")))
                 .andExpect(jsonPath("$.pagoMovilPhone", is("04249876543")))
-                .andExpect(jsonPath("$.binancePayId", is("998877665")));
+                .andExpect(jsonPath("$.binancePayId", is("998877665")))
+                .andExpect(jsonPath("$.zelleEnabled", is(true)))
+                .andExpect(jsonPath("$.zelleEmail", is("zelle@talentus.app")))
+                .andExpect(jsonPath("$.zelleAccountHolder", is("Talentus Holdings LLC")));
 
         // Verificar que el endpoint público de tutores /api/v1/payments/config refleja el cambio en tiempo real
         mockMvc.perform(get("/api/v1/payments/config"))
@@ -128,7 +136,10 @@ class AdminPaymentGatewayConfigControllerTest {
                 .andExpect(jsonPath("$.pagoMovilEnabled", is(false)))
                 .andExpect(jsonPath("$.bankName", is("Banco Mercantil")))
                 .andExpect(jsonPath("$.phoneNumber", is("04249876543")))
-                .andExpect(jsonPath("$.binancePayId", is("998877665")));
+                .andExpect(jsonPath("$.binancePayId", is("998877665")))
+                .andExpect(jsonPath("$.zelleEnabled", is(true)))
+                .andExpect(jsonPath("$.zelleEmail", is("zelle@talentus.app")))
+                .andExpect(jsonPath("$.zelleAccountHolder", is("Talentus Holdings LLC")));
     }
 
     @Test
@@ -178,6 +189,40 @@ class AdminPaymentGatewayConfigControllerTest {
         );
 
         mockMvc.perform(multipart("/api/v1/admin/payments/gateway-settings/binance-qr")
+                        .file(invalidFile)
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error", containsString("Solo se admiten imágenes")));
+    }
+
+    @Test
+    @DisplayName("Admin puede subir código QR de Zelle exitosamente")
+    void uploadZelleQr_asAdmin_success() throws Exception {
+        MockMultipartFile mockQr = new MockMultipartFile(
+                "file",
+                "test-zelle-qr.png",
+                "image/png",
+                "FAKE_ZELLE_QR_IMAGE_BYTES_12345".getBytes()
+        );
+
+        mockMvc.perform(multipart("/api/v1/admin/payments/gateway-settings/zelle-qr")
+                        .file(mockQr)
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.qrImageUrl", containsString("/uploads/payments/")));
+    }
+
+    @Test
+    @DisplayName("Subida de QR de Zelle rechaza formatos inválidos")
+    void uploadZelleQr_invalidType_badRequest() throws Exception {
+        MockMultipartFile invalidFile = new MockMultipartFile(
+                "file",
+                "invalid.pdf",
+                "application/pdf",
+                "PDF_BYTES".getBytes()
+        );
+
+        mockMvc.perform(multipart("/api/v1/admin/payments/gateway-settings/zelle-qr")
                         .file(invalidFile)
                         .header("Authorization", "Bearer " + adminToken))
                 .andExpect(status().isBadRequest())

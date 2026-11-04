@@ -65,4 +65,28 @@ public class AdminPaymentGatewayConfigController {
         log.info("Binance QR code successfully uploaded and updated by admin: {}", qrImageUrl);
         return ResponseEntity.ok(Map.of("qrImageUrl", qrImageUrl));
     }
+
+    @PostMapping("/zelle-qr")
+    public ResponseEntity<Map<String, String>> uploadZelleQr(
+            @RequestParam("file") MultipartFile file
+    ) {
+        if (file == null || file.isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "El archivo de código QR de Zelle no puede estar vacío"));
+        }
+
+        if (file.getSize() > MAX_QR_FILE_SIZE) {
+            return ResponseEntity.badRequest().body(Map.of("error", "El archivo excede el tamaño máximo permitido de 5MB"));
+        }
+
+        String contentType = file.getContentType();
+        if (contentType == null || !ALLOWED_IMAGE_TYPES.contains(contentType.toLowerCase())) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Formato de archivo inválido. Solo se admiten imágenes PNG, JPG o WEBP"));
+        }
+
+        String qrImageUrl = fileStorageService.storeFile(file, "payments");
+        paymentConfigService.updateZelleQrUrl(qrImageUrl);
+
+        log.info("Zelle QR code successfully uploaded and updated by admin: {}", qrImageUrl);
+        return ResponseEntity.ok(Map.of("qrImageUrl", qrImageUrl));
+    }
 }

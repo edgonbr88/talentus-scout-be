@@ -47,6 +47,15 @@ public class PaymentConfigService {
     @Value("${talentus.payments.binance.qr-image-url:/assets/images/binance-qr-sample.png}")
     private String defaultBinanceQrImageUrl;
 
+    @Value("${talentus.payments.zelle.email:pagos@talentusscout.com}")
+    private String defaultZelleEmail;
+
+    @Value("${talentus.payments.zelle.account-holder:Talentus Scout LLC}")
+    private String defaultZelleAccountHolder;
+
+    @Value("${talentus.payments.zelle.qr-image-url:}")
+    private String defaultZelleQrImageUrl;
+
     @Transactional(readOnly = true)
     public PaymentConfigResponse getPaymentConfig() {
         BcvRateResponse bcv = bcvRateService.getOfficialRate();
@@ -69,6 +78,11 @@ public class PaymentConfigService {
         String network = settingOpt.map(PaymentGatewaySetting::getBinanceNetwork).orElse(defaultBinanceNetwork);
         String qrUrl = settingOpt.map(PaymentGatewaySetting::getBinanceQrImageUrl).orElse(defaultBinanceQrImageUrl);
 
+        boolean zelleEnabled = settingOpt.map(PaymentGatewaySetting::getZelleEnabled).orElse(true);
+        String zelleEmail = settingOpt.map(PaymentGatewaySetting::getZelleEmail).orElse(defaultZelleEmail);
+        String zelleHolder = settingOpt.map(PaymentGatewaySetting::getZelleAccountHolder).orElse(defaultZelleAccountHolder);
+        String zelleQrUrl = settingOpt.map(PaymentGatewaySetting::getZelleQrImageUrl).orElse(defaultZelleQrImageUrl);
+
         return PaymentConfigResponse.builder()
                 .bcvRate(bcv.getRate())
                 .bcvLastUpdated(bcv.getLastUpdated())
@@ -83,6 +97,10 @@ public class PaymentConfigService {
                 .binanceWalletAddress(wallet)
                 .binanceNetwork(network)
                 .binanceQrImageUrl(qrUrl)
+                .zelleEnabled(zelleEnabled)
+                .zelleEmail(zelleEmail)
+                .zelleAccountHolder(zelleHolder)
+                .zelleQrImageUrl(zelleQrUrl != null && !zelleQrUrl.isBlank() ? zelleQrUrl : null)
                 .build();
     }
 
@@ -115,6 +133,16 @@ public class PaymentConfigService {
             setting.setBinanceNetwork(request.getBinanceNetwork().trim());
         }
 
+        if (request.getZelleEnabled() != null) {
+            setting.setZelleEnabled(request.getZelleEnabled());
+        }
+        if (request.getZelleEmail() != null) {
+            setting.setZelleEmail(request.getZelleEmail().trim());
+        }
+        if (request.getZelleAccountHolder() != null) {
+            setting.setZelleAccountHolder(request.getZelleAccountHolder().trim());
+        }
+
         PaymentGatewaySetting saved = paymentGatewaySettingRepository.save(setting);
         log.info("Payment gateway settings updated successfully by administrator: ID={}", saved.getId());
         return mapToGatewayDto(saved);
@@ -130,6 +158,16 @@ public class PaymentConfigService {
         return mapToGatewayDto(saved);
     }
 
+    @Transactional
+    public PaymentGatewaySettingsDto updateZelleQrUrl(String qrImageUrl) {
+        PaymentGatewaySetting setting = paymentGatewaySettingRepository.findSingleton()
+                .orElseGet(this::createDefaultSetting);
+        setting.setZelleQrImageUrl(qrImageUrl);
+        PaymentGatewaySetting saved = paymentGatewaySettingRepository.save(setting);
+        log.info("Zelle QR image URL updated successfully: {}", qrImageUrl);
+        return mapToGatewayDto(saved);
+    }
+
     private PaymentGatewaySetting createDefaultSetting() {
         PaymentGatewaySetting defaultSetting = PaymentGatewaySetting.builder()
                 .pagoMovilEnabled(true)
@@ -142,6 +180,10 @@ public class PaymentConfigService {
                 .binanceWalletAddress(defaultBinanceWalletAddress)
                 .binanceNetwork(defaultBinanceNetwork)
                 .binanceQrImageUrl(defaultBinanceQrImageUrl)
+                .zelleEnabled(true)
+                .zelleEmail(defaultZelleEmail)
+                .zelleAccountHolder(defaultZelleAccountHolder)
+                .zelleQrImageUrl(defaultZelleQrImageUrl != null && !defaultZelleQrImageUrl.isBlank() ? defaultZelleQrImageUrl : null)
                 .build();
         return paymentGatewaySettingRepository.save(defaultSetting);
     }
@@ -159,6 +201,10 @@ public class PaymentConfigService {
                 .binanceWalletAddress(s.getBinanceWalletAddress())
                 .binanceNetwork(s.getBinanceNetwork())
                 .binanceQrImageUrl(s.getBinanceQrImageUrl())
+                .zelleEnabled(s.getZelleEnabled() != null ? s.getZelleEnabled() : true)
+                .zelleEmail(s.getZelleEmail() != null ? s.getZelleEmail() : defaultZelleEmail)
+                .zelleAccountHolder(s.getZelleAccountHolder() != null ? s.getZelleAccountHolder() : defaultZelleAccountHolder)
+                .zelleQrImageUrl(s.getZelleQrImageUrl())
                 .updatedAt(s.getUpdatedAt())
                 .build();
     }
