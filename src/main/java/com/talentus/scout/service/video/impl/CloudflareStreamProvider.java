@@ -54,6 +54,10 @@ public class CloudflareStreamProvider implements VideoStreamProvider {
 
     @Override
     public UploadTicket requestUploadTicket(UUID videoId, UUID athleteId, String title) {
+        if (accountId == null || accountId.isBlank() || apiToken == null || apiToken.isBlank()) {
+            throw new IllegalStateException("Las credenciales de Cloudflare Stream (CLOUDFLARE_STREAM_ACCOUNT_ID / CLOUDFLARE_STREAM_API_TOKEN) no están configuradas en el servidor.");
+        }
+
         String url = String.format("https://api.cloudflare.com/client/v4/accounts/%s/stream/direct_upload", accountId);
 
         Map<String, Object> body = new HashMap<>();

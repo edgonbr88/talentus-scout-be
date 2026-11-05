@@ -236,4 +236,29 @@ class VideoServiceTest {
 
         assertTrue(ex.getMessage().contains("El atleta no cuenta con una suscripción Pro activa para subir videos."));
     }
+
+    @Test
+    void confirmDirectUpload_UpdatesCloudflareUrlsAndMarksReady() {
+        UUID videoId = UUID.randomUUID();
+        AthleteVideo video = AthleteVideo.builder()
+                .id(videoId)
+                .athlete(athlete)
+                .title("Jugadas Cloudflare")
+                .category(VideoCategory.HIGHLIGHTS)
+                .providerVideoId("cf-uid-5566")
+                .status(VideoStatus.PENDING_UPLOAD)
+                .sortOrder(1)
+                .build();
+
+        when(athleteVideoRepository.findById(videoId)).thenReturn(Optional.of(video));
+        when(userRepository.findByEmail(tutor.getEmail())).thenReturn(Optional.of(tutor));
+        when(athleteVideoRepository.save(any(AthleteVideo.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        var response = videoService.confirmDirectUpload(videoId, tutor.getEmail());
+
+        assertNotNull(response);
+        assertEquals(VideoStatus.READY, response.status());
+        assertEquals("https://videodelivery.net/cf-uid-5566/manifest/video.m3u8", response.playbackUrl());
+        assertEquals("https://videodelivery.net/cf-uid-5566/thumbnails/thumbnail.jpg", response.thumbnailUrl());
+    }
 }

@@ -59,6 +59,7 @@ public class VideoService {
     private final VideoStreamProvider videoStreamProvider;
     private final String uploadDir;
     private final String baseUrl;
+    private final boolean videoEnabled;
 
     public VideoService(
             AthleteRepository athleteRepository,
@@ -66,8 +67,31 @@ public class VideoService {
             AthleteSubscriptionRepository athleteSubscriptionRepository,
             UserRepository userRepository,
             VideoStreamProvider videoStreamProvider,
+            String uploadDir,
+            String baseUrl
+    ) {
+        this(
+                athleteRepository,
+                athleteVideoRepository,
+                athleteSubscriptionRepository,
+                userRepository,
+                videoStreamProvider,
+                uploadDir,
+                baseUrl,
+                true
+        );
+    }
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public VideoService(
+            AthleteRepository athleteRepository,
+            AthleteVideoRepository athleteVideoRepository,
+            AthleteSubscriptionRepository athleteSubscriptionRepository,
+            UserRepository userRepository,
+            VideoStreamProvider videoStreamProvider,
             @Value("${talentus.video.upload-dir:uploads/videos}") String uploadDir,
-            @Value("${talentus.video.mock.base-url:http://localhost:8080}") String baseUrl
+            @Value("${talentus.video.mock.base-url:http://localhost:8080}") String baseUrl,
+            @Value("${talentus.video.enabled:true}") boolean videoEnabled
     ) {
         this.athleteRepository = athleteRepository;
         this.athleteVideoRepository = athleteVideoRepository;
@@ -76,6 +100,7 @@ public class VideoService {
         this.videoStreamProvider = videoStreamProvider;
         this.uploadDir = uploadDir;
         this.baseUrl = baseUrl.endsWith("/") ? baseUrl.substring(0, baseUrl.length() - 1) : baseUrl;
+        this.videoEnabled = videoEnabled;
     }
 
     @PostConstruct
@@ -90,6 +115,10 @@ public class VideoService {
 
     @Transactional
     public UploadTicketResponse requestUpload(RequestUploadRequest request, String currentUserEmail) {
+        if (!videoEnabled) {
+            throw new IllegalStateException("El módulo de carga de videos está temporalmente deshabilitado.");
+        }
+
         Athlete athlete = athleteRepository.findById(request.athleteId())
                 .orElseThrow(() -> new ResourceNotFoundException("Atleta no encontrado con id: " + request.athleteId()));
 
@@ -121,6 +150,10 @@ public class VideoService {
 
         UploadTicket ticket = videoStreamProvider.requestUploadTicket(saved.getId(), athlete.getId(), request.title());
         saved.setProviderVideoId(ticket.getProviderVideoId());
+        if ("cloudflare".equalsIgnoreCase(videoStreamProvider.getProviderName()) && ticket.getProviderVideoId() != null) {
+            saved.setPlaybackUrl(String.format("https://videodelivery.net/%s/manifest/video.m3u8", ticket.getProviderVideoId()));
+            saved.setThumbnailUrl(String.format("https://videodelivery.net/%s/thumbnails/thumbnail.jpg", ticket.getProviderVideoId()));
+        }
         saved = athleteVideoRepository.save(saved);
 
         log.info("Video creado con ID {} para atleta {} con providerId {}", saved.getId(), athlete.getId(), ticket.getProviderVideoId());
@@ -131,6 +164,41 @@ public class VideoService {
                 ticket.getProviderVideoId(),
                 ticket.getMaxSizeBytes()
         );
+    }
+
+    @Transactional
+    public AthleteVideoResponse confirmDirectUpload(UUID videoId, String currentUserEmail) {
+        AthleteVideo video = athleteVideoRepository.findById(videoId)
+                .orElseThrow(() -> new ResourceNotFoundException("Video no encontrado con id: " + videoId));
+
+        if (currentUserEmail == null || currentUserEmail.isBlank()) {
+            throw new AccessDeniedException("Se requiere autenticación para confirmar la carga del video.");
+        }
+
+        User currentUser = userRepository.findByEmail(currentUserEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado con email: " + currentUserEmail));
+
+        Athlete athlete = video.getAthlete();
+        if (currentUser.getRole() != UserRole.TUTOR || athlete == null || athlete.getTutor() == null || !athlete.getTutor().getId().equals(currentUser.getId())) {
+            throw new AccessDeniedException("No tienes autorización para confirmar videos de este atleta.");
+        }
+
+        String providerId = video.getProviderVideoId();
+        if (providerId != null && !providerId.isBlank() && !"pending".equalsIgnoreCase(providerId)) {
+            if (video.getPlaybackUrl() == null || video.getPlaybackUrl().isBlank()) {
+                video.setPlaybackUrl(String.format("https://videodelivery.net/%s/manifest/video.m3u8", providerId));
+            }
+            if (video.getThumbnailUrl() == null || video.getThumbnailUrl().isBlank()) {
+                video.setThumbnailUrl(String.format("https://videodelivery.net/%s/thumbnails/thumbnail.jpg", providerId));
+            }
+        }
+        if (video.getStatus() == VideoStatus.PENDING_UPLOAD) {
+            video.setStatus(VideoStatus.READY);
+        }
+
+        AthleteVideo updated = athleteVideoRepository.save(video);
+        log.info("Carga directa confirmada para video {} (providerId={})", updated.getId(), providerId);
+        return AthleteVideoResponse.fromEntity(updated);
     }
 
     @Transactional

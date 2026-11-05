@@ -49,6 +49,17 @@ public class VideoController {
         return ResponseEntity.ok(response);
     }
 
+    @PostMapping("/api/v1/videos/{videoId}/confirm-upload")
+    @PreAuthorize("hasRole('TUTOR')")
+    public ResponseEntity<AthleteVideoResponse> confirmDirectUpload(
+            @PathVariable("videoId") UUID videoId,
+            Authentication authentication
+    ) {
+        String currentUserEmail = authentication != null ? authentication.getName() : null;
+        AthleteVideoResponse response = videoService.confirmDirectUpload(videoId, currentUserEmail);
+        return ResponseEntity.ok(response);
+    }
+
     @PostMapping("/api/v1/videos/webhook")
     public ResponseEntity<WebhookResponse> handleWebhook(
             @RequestBody(required = false) String payload,

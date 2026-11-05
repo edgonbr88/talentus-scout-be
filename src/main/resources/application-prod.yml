@@ -51,7 +51,13 @@ talentus:
       private-bucket: ${R2_PRIVATE_BUCKET:talentus-private-documents}
       cdn-base-url: ${R2_CDN_BASE_URL:https://cdn.talentusscout.com}
   video:
-    enabled: ${VIDEO_FEATURE_ENABLED:false}
+    enabled: ${VIDEO_FEATURE_ENABLED:true}
+    provider: ${VIDEO_STREAM_PROVIDER:cloudflare}
+    max-size-bytes: ${VIDEO_MAX_SIZE_BYTES:524288000}
+    cloudflare:
+      account-id: ${CLOUDFLARE_STREAM_ACCOUNT_ID:}
+      api-token: ${CLOUDFLARE_STREAM_API_TOKEN:}
+      webhook-secret: ${CLOUDFLARE_STREAM_WEBHOOK_SECRET:}
   frontend:
     base-url: ${FRONTEND_BASE_URL:https://talentusscout.com}
     certify-url: ${FRONTEND_CERTIFY_URL:https://talentusscout.com/certify}
