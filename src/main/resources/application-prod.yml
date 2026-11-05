@@ -50,6 +50,7 @@ talentus:
       public-bucket: ${R2_PUBLIC_BUCKET:talentus-public}
       private-bucket: ${R2_PRIVATE_BUCKET:talentus-private-documents}
       cdn-base-url: ${R2_CDN_BASE_URL:https://cdn.talentusscout.com}
+  # Integracion oficial de streaming con Cloudflare Stream
   video:
     enabled: ${VIDEO_FEATURE_ENABLED:true}
     provider: ${VIDEO_STREAM_PROVIDER:cloudflare}
