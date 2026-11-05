@@ -41,15 +41,15 @@ public class CloudflareStreamProvider implements VideoStreamProvider {
             @Value("${talentus.video.cloudflare.api-token:}") String apiToken,
             @Value("${talentus.video.cloudflare.webhook-secret:}") String webhookSecret,
             @Value("${talentus.video.max-size-bytes:524288000}") long maxSizeBytes,
-            RestClient.Builder restClientBuilder,
+            @org.springframework.beans.factory.annotation.Autowired(required = false) RestClient.Builder restClientBuilder,
             ObjectMapper objectMapper
     ) {
         this.accountId = accountId;
         this.apiToken = apiToken;
         this.webhookSecret = webhookSecret;
         this.maxSizeBytes = maxSizeBytes;
-        this.restClient = restClientBuilder.build();
-        this.objectMapper = objectMapper;
+        this.restClient = (restClientBuilder != null ? restClientBuilder : RestClient.builder()).build();
+        this.objectMapper = objectMapper != null ? objectMapper : new ObjectMapper();
     }
 
     @Override

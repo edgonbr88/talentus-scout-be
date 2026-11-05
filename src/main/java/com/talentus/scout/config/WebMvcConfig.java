@@ -37,6 +37,11 @@ public class WebMvcConfig implements WebMvcConfigurer {
         return mapper;
     }
 
+    @Bean
+    public org.springframework.web.client.RestClient.Builder restClientBuilder() {
+        return org.springframework.web.client.RestClient.builder();
+    }
+
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         if ("r2".equalsIgnoreCase(storageProvider)) {
