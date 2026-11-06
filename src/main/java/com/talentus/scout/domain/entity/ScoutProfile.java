@@ -40,6 +40,18 @@ public class ScoutProfile {
     @Column(name = "credentials_document_url", nullable = false, columnDefinition = "TEXT")
     private String credentialsDocumentUrl;
 
+    @Column(name = "id_document_type", length = 30)
+    private String idDocumentType;
+
+    @Column(name = "id_document_number", length = 50)
+    private String idDocumentNumber;
+
+    @Column(name = "id_document_url", columnDefinition = "TEXT")
+    private String idDocumentUrl;
+
+    @Column(name = "selfie_url", columnDefinition = "TEXT")
+    private String selfieUrl;
+
     @Column(name = "linkedin_url", columnDefinition = "TEXT")
     private String linkedinUrl;
 

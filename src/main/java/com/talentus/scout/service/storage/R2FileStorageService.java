@@ -227,7 +227,15 @@ public class R2FileStorageService implements FileStorageService {
                 || normalized.startsWith("credentials")
                 || normalized.contains("credentials")
                 || normalized.startsWith("documents")
-                || normalized.contains("documents");
+                || normalized.contains("documents")
+                || normalized.startsWith("selfies")
+                || normalized.contains("selfies")
+                || normalized.startsWith("selfie")
+                || normalized.contains("selfie")
+                || normalized.startsWith("tutor-representations")
+                || normalized.contains("tutor-representations")
+                || normalized.startsWith("representations")
+                || normalized.contains("representations");
     }
 
     private String extractObjectKey(String fileUrl) {

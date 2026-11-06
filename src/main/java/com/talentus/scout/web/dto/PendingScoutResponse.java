@@ -25,6 +25,10 @@ public class PendingScoutResponse {
     private String organizationName;
     private String scoutRole;
     private String credentialsDocumentUrl;
+    private String idDocumentType;
+    private String idDocumentNumber;
+    private String idDocumentUrl;
+    private String selfieUrl;
     private String linkedinUrl;
     private ScoutVerificationStatus verificationStatus;
     private Instant createdAt;

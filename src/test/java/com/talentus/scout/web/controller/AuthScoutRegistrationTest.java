@@ -52,6 +52,24 @@ class AuthScoutRegistrationTest {
                 .build();
     }
 
+    private MockMultipartFile createIdDocumentFile() {
+        return new MockMultipartFile(
+                "idDocumentFile",
+                "cedula.pdf",
+                "application/pdf",
+                "Fake PDF Cedula Content".getBytes()
+        );
+    }
+
+    private MockMultipartFile createSelfieFile() {
+        return new MockMultipartFile(
+                "selfieFile",
+                "selfie.jpg",
+                "image/jpeg",
+                "Fake JPG Selfie Content".getBytes()
+        );
+    }
+
     @Test
     void registerScout_WithValidData_Returns201AndPendingVerificationStatus() throws Exception {
         String email = "scout." + System.currentTimeMillis() + "@rayovallecano.es";
@@ -65,12 +83,16 @@ class AuthScoutRegistrationTest {
 
         mockMvc.perform(multipart("/api/v1/auth/register-scout")
                         .file(credentialsFile)
+                        .file(createIdDocumentFile())
+                        .file(createSelfieFile())
                         .param("email", email)
                         .param("password", "Password123*")
                         .param("fullName", "Mateo Falcon")
                         .param("phoneNumber", "+584121234567")
                         .param("organizationName", "Academia Rayo Vallecano")
                         .param("scoutRole", "Reclutador Internacional")
+                        .param("idDocumentType", "V")
+                        .param("idDocumentNumber", "12345678")
                         .param("linkedinUrl", "https://linkedin.com/in/mateo-falcon"))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.token").isNotEmpty())
@@ -95,7 +117,11 @@ class AuthScoutRegistrationTest {
         assertEquals(ScoutVerificationStatus.PENDING, profile.getVerificationStatus());
         assertEquals("Academia Rayo Vallecano", profile.getOrganizationName());
         assertEquals("Reclutador Internacional", profile.getScoutRole());
+        assertEquals("V", profile.getIdDocumentType());
+        assertEquals("12345678", profile.getIdDocumentNumber());
         assertTrue(profile.getCredentialsDocumentUrl().contains("/uploads/credentials/"));
+        assertTrue(profile.getIdDocumentUrl().contains("/uploads/identity-documents/scouts/"));
+        assertTrue(profile.getSelfieUrl().contains("/uploads/selfies/scouts/"));
     }
 
     @Test
@@ -112,23 +138,31 @@ class AuthScoutRegistrationTest {
         // Primer registro exitoso
         mockMvc.perform(multipart("/api/v1/auth/register-scout")
                         .file(credentialsFile)
+                        .file(createIdDocumentFile())
+                        .file(createSelfieFile())
                         .param("email", email)
                         .param("password", "Password123*")
                         .param("fullName", "Mateo Falcon")
                         .param("phoneNumber", "+584121234567")
                         .param("organizationName", "Academia Rayo Vallecano")
-                        .param("scoutRole", "Reclutador Internacional"))
+                        .param("scoutRole", "Reclutador Internacional")
+                        .param("idDocumentType", "V")
+                        .param("idDocumentNumber", "12345678"))
                 .andExpect(status().isCreated());
 
         // Segundo registro con el mismo email -> Conflict
         mockMvc.perform(multipart("/api/v1/auth/register-scout")
                         .file(credentialsFile)
+                        .file(createIdDocumentFile())
+                        .file(createSelfieFile())
                         .param("email", email)
                         .param("password", "Password123*")
                         .param("fullName", "Mateo Falcon")
                         .param("phoneNumber", "+584121234567")
                         .param("organizationName", "Academia Rayo Vallecano")
-                        .param("scoutRole", "Reclutador Internacional"))
+                        .param("scoutRole", "Reclutador Internacional")
+                        .param("idDocumentType", "V")
+                        .param("idDocumentNumber", "12345678"))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.error").value("CONFLICT"))
                 .andExpect(jsonPath("$.message").isNotEmpty());
@@ -139,12 +173,41 @@ class AuthScoutRegistrationTest {
         String email = "scout.nofile." + System.currentTimeMillis() + "@test.com";
 
         mockMvc.perform(multipart("/api/v1/auth/register-scout")
+                        .file(createIdDocumentFile())
+                        .file(createSelfieFile())
                         .param("email", email)
                         .param("password", "Password123*")
                         .param("fullName", "Scout Sin Archivo")
                         .param("phoneNumber", "+584121234567")
                         .param("organizationName", "Club Prueba")
-                        .param("scoutRole", "Scout"))
+                        .param("scoutRole", "Scout")
+                        .param("idDocumentType", "V")
+                        .param("idDocumentNumber", "12345678"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void registerScout_MissingSelfieOrIdDocument_Returns400BadRequest() throws Exception {
+        String email = "scout.noselfie." + System.currentTimeMillis() + "@test.com";
+        MockMultipartFile credentialsFile = new MockMultipartFile(
+                "credentialsFile",
+                "credencial.pdf",
+                "application/pdf",
+                "PDF".getBytes()
+        );
+
+        // Sin selfie
+        mockMvc.perform(multipart("/api/v1/auth/register-scout")
+                        .file(credentialsFile)
+                        .file(createIdDocumentFile())
+                        .param("email", email)
+                        .param("password", "Password123*")
+                        .param("fullName", "Scout Sin Selfie")
+                        .param("phoneNumber", "+584121234567")
+                        .param("organizationName", "Club Prueba")
+                        .param("scoutRole", "Scout")
+                        .param("idDocumentType", "V")
+                        .param("idDocumentNumber", "12345678"))
                 .andExpect(status().isBadRequest());
     }
 
@@ -163,12 +226,16 @@ class AuthScoutRegistrationTest {
 
         mockMvc.perform(multipart("/api/v1/auth/register-scout")
                         .file(file)
+                        .file(createIdDocumentFile())
+                        .file(createSelfieFile())
                         .param("email", email)
                         .param("password", "Password123*")
                         .param("fullName", "Ojeador La Guaira")
                         .param("phoneNumber", "+584121234567")
                         .param("organizationClubId", club.getId().toString())
-                        .param("scoutRole", "Ojeador Juvenil"))
+                        .param("scoutRole", "Ojeador Juvenil")
+                        .param("idDocumentType", "V")
+                        .param("idDocumentNumber", "12345678"))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.organizationName").value(club.getName()));
 
@@ -187,6 +254,8 @@ class AuthScoutRegistrationTest {
 
         mockMvc.perform(multipart("/api/v1/auth/register-scout")
                         .file(file)
+                        .file(createIdDocumentFile())
+                        .file(createSelfieFile())
                         .param("email", email)
                         .param("password", "Password123*")
                         .param("fullName", "Director Los Andes")
@@ -195,7 +264,9 @@ class AuthScoutRegistrationTest {
                         .param("customClubCity", "Mérida")
                         .param("customClubState", "Mérida")
                         .param("customClubCountry", "Venezuela")
-                        .param("scoutRole", "Director Deportivo"))
+                        .param("scoutRole", "Director Deportivo")
+                        .param("idDocumentType", "V")
+                        .param("idDocumentNumber", "12345678"))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.organizationName").value(customName));
 
@@ -214,12 +285,16 @@ class AuthScoutRegistrationTest {
 
         mockMvc.perform(multipart("/api/v1/auth/register-scout")
                         .file(file)
+                        .file(createIdDocumentFile())
+                        .file(createSelfieFile())
                         .param("email", email)
                         .param("password", "Password123*")
                         .param("fullName", "Agente FIFA Libre")
                         .param("phoneNumber", "+584121234567")
                         .param("organizationName", "Agente Independiente")
-                        .param("scoutRole", "Agente FIFA"))
+                        .param("scoutRole", "Agente FIFA")
+                        .param("idDocumentType", "V")
+                        .param("idDocumentNumber", "12345678"))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.organizationName").value("Agente Independiente"));
 

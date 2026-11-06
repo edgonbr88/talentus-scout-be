@@ -64,4 +64,18 @@ public class RegisterScoutRequest {
 
     @NotNull(message = "El archivo de credenciales o acreditación es obligatorio")
     private MultipartFile credentialsFile;
+
+    @NotBlank(message = "El tipo de documento de identidad es obligatorio")
+    @Size(max = 30, message = "El tipo de documento no puede exceder 30 caracteres")
+    private String idDocumentType;
+
+    @NotBlank(message = "El número de documento de identidad es obligatorio")
+    @Size(max = 50, message = "El número de documento no puede exceder 50 caracteres")
+    private String idDocumentNumber;
+
+    @NotNull(message = "El archivo del documento de identidad es obligatorio")
+    private MultipartFile idDocumentFile;
+
+    @NotNull(message = "La fotografía selfie es obligatoria")
+    private MultipartFile selfieFile;
 }

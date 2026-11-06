@@ -71,4 +71,22 @@ public class RegisterTutorRequest {
 
     @NotNull(message = "El archivo del documento de identidad es obligatorio")
     private MultipartFile idDocumentFile;
+
+    @NotBlank(message = "El tipo de parentesco o representación es obligatorio")
+    @Pattern(regexp = "^(PARENT|LEGAL_REPRESENTATIVE)$", message = "El parentesco debe ser PARENT (Padre/Madre) o LEGAL_REPRESENTATIVE (Representante Legal)")
+    @Builder.Default
+    private String relationshipType = "PARENT";
+
+    @NotNull(message = "La fotografía selfie es obligatoria")
+    private MultipartFile selfieFile;
+
+    private MultipartFile representationDocumentFile;
+
+    @AssertTrue(message = "El documento de poder notariado o tutela legal es obligatorio para representantes legales")
+    public boolean isRepresentationDocumentProvidedIfLegalRep() {
+        if ("LEGAL_REPRESENTATIVE".equalsIgnoreCase(relationshipType)) {
+            return representationDocumentFile != null && !representationDocumentFile.isEmpty();
+        }
+        return true;
+    }
 }

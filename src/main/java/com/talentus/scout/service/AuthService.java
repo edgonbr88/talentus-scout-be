@@ -83,6 +83,16 @@ public class AuthService {
             storedFileUrl = fileStorageService.storeFile(request.getIdDocumentFile(), "identity-documents/tutors");
         }
 
+        String storedSelfieUrl = null;
+        if (request.getSelfieFile() != null && !request.getSelfieFile().isEmpty()) {
+            storedSelfieUrl = fileStorageService.storeFile(request.getSelfieFile(), "selfies/tutors");
+        }
+
+        String storedRepDocUrl = null;
+        if (request.getRepresentationDocumentFile() != null && !request.getRepresentationDocumentFile().isEmpty()) {
+            storedRepDocUrl = fileStorageService.storeFile(request.getRepresentationDocumentFile(), "tutor-representations");
+        }
+
         User user = User.builder()
                 .email(request.getEmail())
                 .passwordHash(passwordEncoder.encode(request.getPassword()))
@@ -103,9 +113,12 @@ public class AuthService {
                 .termsVersion("1.0")
                 .ipAddress((ipAddress != null && !ipAddress.isBlank()) ? ipAddress : "127.0.0.1")
                 .userAgent((userAgent != null && !userAgent.isBlank()) ? userAgent : "UNKNOWN")
+                .relationshipType((request.getRelationshipType() != null && !request.getRelationshipType().isBlank()) ? request.getRelationshipType() : "PARENT")
                 .idDocumentType(request.getIdDocumentType())
                 .idDocumentNumber(request.getIdDocumentNumber())
                 .idDocumentFileUrl(storedFileUrl)
+                .selfieFileUrl(storedSelfieUrl)
+                .representationDocumentFileUrl(storedRepDocUrl)
                 .acceptedAt(Instant.now())
                 .build();
         tutorLegalConsentRepository.save(consent);
@@ -186,6 +199,11 @@ public class AuthService {
 
     @Transactional
     public RegisterScoutResponse registerScout(RegisterScoutRequest request, String credentialsUrl) {
+        return registerScout(request, credentialsUrl, null, null);
+    }
+
+    @Transactional
+    public RegisterScoutResponse registerScout(RegisterScoutRequest request, String credentialsUrl, String idDocumentUrl, String selfieUrl) {
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new EmailAlreadyExistsException("El correo ya se encuentra registrado: " + request.getEmail());
         }
@@ -235,6 +253,10 @@ public class AuthService {
                 .organizationName(finalOrgName)
                 .scoutRole(request.getScoutRole())
                 .credentialsDocumentUrl(credentialsUrl)
+                .idDocumentType(request.getIdDocumentType())
+                .idDocumentNumber(request.getIdDocumentNumber())
+                .idDocumentUrl(idDocumentUrl)
+                .selfieUrl(selfieUrl)
                 .linkedinUrl(request.getLinkedinUrl())
                 .verificationStatus(ScoutVerificationStatus.PENDING)
                 .build();
