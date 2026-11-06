@@ -135,7 +135,13 @@ public class AuthController {
             @Valid @ModelAttribute RegisterScoutRequest request
     ) {
         String credentialsUrl = fileStorageService.storeFile(request.getCredentialsFile(), "credentials");
-        RegisterScoutResponse response = authService.registerScout(request, credentialsUrl);
+        String idDocumentUrl = (request.getIdDocumentFile() != null && !request.getIdDocumentFile().isEmpty())
+                ? fileStorageService.storeFile(request.getIdDocumentFile(), "identity-documents/scouts")
+                : null;
+        String selfieUrl = (request.getSelfieFile() != null && !request.getSelfieFile().isEmpty())
+                ? fileStorageService.storeFile(request.getSelfieFile(), "selfies/scouts")
+                : null;
+        RegisterScoutResponse response = authService.registerScout(request, credentialsUrl, idDocumentUrl, selfieUrl);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 

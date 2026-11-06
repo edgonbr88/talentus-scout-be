@@ -146,6 +146,15 @@ public class LegalVerificationService {
         String tutorDocUrl = (bestConsent != null && bestConsent.getIdDocumentFileUrl() != null && !bestConsent.getIdDocumentFileUrl().isBlank())
                 ? fileStorageService.generatePresignedUrl(bestConsent.getIdDocumentFileUrl(), Duration.ofMinutes(5))
                 : null;
+        String tutorSelfieUrl = (bestConsent != null && bestConsent.getSelfieFileUrl() != null && !bestConsent.getSelfieFileUrl().isBlank())
+                ? fileStorageService.generatePresignedUrl(bestConsent.getSelfieFileUrl(), Duration.ofMinutes(5))
+                : null;
+        String tutorRepDocUrl = (bestConsent != null && bestConsent.getRepresentationDocumentFileUrl() != null && !bestConsent.getRepresentationDocumentFileUrl().isBlank())
+                ? fileStorageService.generatePresignedUrl(bestConsent.getRepresentationDocumentFileUrl(), Duration.ofMinutes(5))
+                : null;
+        String relationshipType = (bestConsent != null && bestConsent.getRelationshipType() != null)
+                ? bestConsent.getRelationshipType()
+                : "PARENT";
 
         return LegalVerificationPendingItemResponse.builder()
                 .athleteId(athlete.getId())
@@ -164,9 +173,12 @@ public class LegalVerificationService {
                 .tutorFullName(tutor != null ? tutor.getFullName() : null)
                 .tutorEmail(tutor != null ? tutor.getEmail() : null)
                 .tutorPhoneNumber(tutor != null ? tutor.getPhoneNumber() : null)
+                .tutorRelationshipType(relationshipType)
                 .tutorDocType(bestConsent != null ? bestConsent.getIdDocumentType() : null)
                 .tutorDocNumber(bestConsent != null ? bestConsent.getIdDocumentNumber() : null)
                 .tutorDocFileUrl(tutorDocUrl)
+                .tutorSelfieUrl(tutorSelfieUrl)
+                .tutorRepresentationDocumentUrl(tutorRepDocUrl)
                 .submittedAt(athlete.getUpdatedAt() != null ? athlete.getUpdatedAt() : athlete.getCreatedAt())
                 .status(athlete.getLegalVerificationStatus())
                 .notes(athlete.getLegalVerificationNotes())

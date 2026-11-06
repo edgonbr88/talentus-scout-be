@@ -38,9 +38,12 @@ public class LegalVerificationPendingItemResponse {
     private String tutorFullName;
     private String tutorEmail;
     private String tutorPhoneNumber;
+    private String tutorRelationshipType;
     private String tutorDocType;
     private String tutorDocNumber;
     private String tutorDocFileUrl;
+    private String tutorSelfieUrl;
+    private String tutorRepresentationDocumentUrl;
 
     // Auditoría
     private Instant submittedAt;

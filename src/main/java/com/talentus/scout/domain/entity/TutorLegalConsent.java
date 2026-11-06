@@ -42,6 +42,10 @@ public class TutorLegalConsent {
     @Column(name = "user_agent", nullable = false, columnDefinition = "TEXT")
     private String userAgent;
 
+    @Builder.Default
+    @Column(name = "relationship_type", nullable = false, length = 30)
+    private String relationshipType = "PARENT";
+
     @Column(name = "id_document_type", length = 30)
     private String idDocumentType;
 
@@ -50,6 +54,12 @@ public class TutorLegalConsent {
 
     @Column(name = "id_document_file_url", length = 500)
     private String idDocumentFileUrl;
+
+    @Column(name = "selfie_file_url", columnDefinition = "TEXT")
+    private String selfieFileUrl;
+
+    @Column(name = "representation_document_file_url", columnDefinition = "TEXT")
+    private String representationDocumentFileUrl;
 
     @Column(name = "accepted_at", nullable = false)
     private Instant acceptedAt;

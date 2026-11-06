@@ -55,6 +55,12 @@ public class AdminScoutService {
                     String presignedCredUrl = (profile.getCredentialsDocumentUrl() != null && !profile.getCredentialsDocumentUrl().isBlank())
                             ? fileStorageService.generatePresignedUrl(profile.getCredentialsDocumentUrl(), Duration.ofMinutes(5))
                             : null;
+                    String presignedIdDocUrl = (profile.getIdDocumentUrl() != null && !profile.getIdDocumentUrl().isBlank())
+                            ? fileStorageService.generatePresignedUrl(profile.getIdDocumentUrl(), Duration.ofMinutes(5))
+                            : null;
+                    String presignedSelfieUrl = (profile.getSelfieUrl() != null && !profile.getSelfieUrl().isBlank())
+                            ? fileStorageService.generatePresignedUrl(profile.getSelfieUrl(), Duration.ofMinutes(5))
+                            : null;
 
                     return PendingScoutResponse.builder()
                             .scoutProfileId(profile.getId())
@@ -65,6 +71,10 @@ public class AdminScoutService {
                             .organizationName(profile.getOrganizationName())
                             .scoutRole(profile.getScoutRole())
                             .credentialsDocumentUrl(presignedCredUrl)
+                            .idDocumentType(profile.getIdDocumentType())
+                            .idDocumentNumber(profile.getIdDocumentNumber())
+                            .idDocumentUrl(presignedIdDocUrl)
+                            .selfieUrl(presignedSelfieUrl)
                             .linkedinUrl(profile.getLinkedinUrl())
                             .verificationStatus(profile.getVerificationStatus())
                             .createdAt(profile.getCreatedAt())

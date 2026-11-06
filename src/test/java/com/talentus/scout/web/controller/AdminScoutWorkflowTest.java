@@ -98,6 +98,10 @@ class AdminScoutWorkflowTest {
                 .organizationName("Academia Internacional")
                 .scoutRole("Director Deportivo")
                 .credentialsDocumentUrl("/uploads/credentials/cred-" + time + ".pdf")
+                .idDocumentType("V")
+                .idDocumentNumber("11223344")
+                .idDocumentUrl("/uploads/identity-documents/scouts/id-" + time + ".pdf")
+                .selfieUrl("/uploads/selfies/scouts/selfie-" + time + ".jpg")
                 .verificationStatus(ScoutVerificationStatus.PENDING)
                 .build();
         scoutProfile = scoutProfileRepository.save(scoutProfile);
@@ -112,7 +116,11 @@ class AdminScoutWorkflowTest {
                 .andExpect(jsonPath("$.content", not(empty())))
                 .andExpect(jsonPath("$.content[*].scoutProfileId", hasItem(scoutProfile.getId().toString())))
                 .andExpect(jsonPath("$.content[*].verificationStatus", hasItem("PENDING")))
-                .andExpect(jsonPath("$.content[*].credentialsDocumentUrl", hasItem(scoutProfile.getCredentialsDocumentUrl())));
+                .andExpect(jsonPath("$.content[*].credentialsDocumentUrl", hasItem(scoutProfile.getCredentialsDocumentUrl())))
+                .andExpect(jsonPath("$.content[*].idDocumentType", hasItem("V")))
+                .andExpect(jsonPath("$.content[*].idDocumentNumber", hasItem("11223344")))
+                .andExpect(jsonPath("$.content[*].idDocumentUrl", hasItem(scoutProfile.getIdDocumentUrl())))
+                .andExpect(jsonPath("$.content[*].selfieUrl", hasItem(scoutProfile.getSelfieUrl())));
     }
 
     @Test
