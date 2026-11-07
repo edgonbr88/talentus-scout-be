@@ -204,6 +204,11 @@ public class AuthService {
 
     @Transactional
     public RegisterScoutResponse registerScout(RegisterScoutRequest request, String credentialsUrl, String idDocumentUrl, String selfieUrl) {
+        return registerScout(request, credentialsUrl, idDocumentUrl, selfieUrl, null, null);
+    }
+
+    @Transactional
+    public RegisterScoutResponse registerScout(RegisterScoutRequest request, String credentialsUrl, String idDocumentUrl, String selfieUrl, String clientIp, String userAgent) {
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new EmailAlreadyExistsException("El correo ya se encuentra registrado: " + request.getEmail());
         }
@@ -259,6 +264,11 @@ public class AuthService {
                 .selfieUrl(selfieUrl)
                 .linkedinUrl(request.getLinkedinUrl())
                 .verificationStatus(ScoutVerificationStatus.PENDING)
+                .acceptedTerms(Boolean.TRUE.equals(request.getAcceptTerms()))
+                .termsVersion("1.0")
+                .termsAcceptedAt(Instant.now())
+                .termsIpAddress(clientIp)
+                .termsUserAgent(userAgent)
                 .build();
         ScoutProfile savedProfile = scoutProfileRepository.save(profile);
         adminNotificationService.notifyNewScoutRegistered(savedProfile);

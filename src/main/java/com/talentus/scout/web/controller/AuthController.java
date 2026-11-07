@@ -132,7 +132,8 @@ public class AuthController {
 
     @PostMapping(value = "/register-scout", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<RegisterScoutResponse> registerScout(
-            @Valid @ModelAttribute RegisterScoutRequest request
+            @Valid @ModelAttribute RegisterScoutRequest request,
+            HttpServletRequest httpRequest
     ) {
         String credentialsUrl = fileStorageService.storeFile(request.getCredentialsFile(), "credentials");
         String idDocumentUrl = (request.getIdDocumentFile() != null && !request.getIdDocumentFile().isEmpty())
@@ -141,7 +142,9 @@ public class AuthController {
         String selfieUrl = (request.getSelfieFile() != null && !request.getSelfieFile().isEmpty())
                 ? fileStorageService.storeFile(request.getSelfieFile(), "selfies/scouts")
                 : null;
-        RegisterScoutResponse response = authService.registerScout(request, credentialsUrl, idDocumentUrl, selfieUrl);
+        String clientIp = extractClientIp(httpRequest);
+        String userAgent = extractUserAgent(httpRequest);
+        RegisterScoutResponse response = authService.registerScout(request, credentialsUrl, idDocumentUrl, selfieUrl, clientIp, userAgent);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
@@ -187,6 +190,10 @@ public class AuthController {
     }
 
     private String extractClientIp(HttpServletRequest httpRequest) {
+        String cfIp = httpRequest.getHeader("CF-Connecting-IP");
+        if (cfIp != null && !cfIp.isBlank()) {
+            return cfIp.trim();
+        }
         String clientIp = httpRequest.getHeader("X-Forwarded-For");
         if (clientIp != null && !clientIp.isBlank()) {
             return clientIp.split(",")[0].trim();
