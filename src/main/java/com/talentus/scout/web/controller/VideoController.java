@@ -28,7 +28,7 @@ public class VideoController {
     }
 
     @PostMapping("/api/v1/videos/request-upload")
-    @PreAuthorize("hasRole('TUTOR')")
+    @PreAuthorize("hasAnyRole('TUTOR', 'ATHLETE')")
     public ResponseEntity<UploadTicketResponse> requestUpload(
             @Valid @RequestBody RequestUploadRequest request,
             Authentication authentication
@@ -39,7 +39,7 @@ public class VideoController {
     }
 
     @PostMapping(value = "/api/v1/videos/mock-upload/{videoId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @PreAuthorize("hasRole('TUTOR')")
+    @PreAuthorize("hasAnyRole('TUTOR', 'ATHLETE')")
     public ResponseEntity<AthleteVideoResponse> mockUpload(
             @PathVariable("videoId") UUID videoId,
             @RequestParam("file") MultipartFile file,
@@ -50,7 +50,7 @@ public class VideoController {
     }
 
     @PostMapping("/api/v1/videos/{videoId}/confirm-upload")
-    @PreAuthorize("hasRole('TUTOR')")
+    @PreAuthorize("hasAnyRole('TUTOR', 'ATHLETE')")
     public ResponseEntity<AthleteVideoResponse> confirmDirectUpload(
             @PathVariable("videoId") UUID videoId,
             Authentication authentication

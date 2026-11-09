@@ -41,7 +41,7 @@ public class PaymentController {
     }
 
     @PostMapping("/coupons/redeem-free")
-    @PreAuthorize("hasAnyRole('TUTOR', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('TUTOR', 'ATHLETE', 'ADMIN')")
     public ResponseEntity<PaymentTransactionResponse> redeemFreePromo(
             Authentication authentication,
             @Valid @RequestBody RedeemFreePromoRequest request
@@ -63,7 +63,7 @@ public class PaymentController {
     }
 
     @PostMapping("/report-pago-movil")
-    @PreAuthorize("hasAnyRole('TUTOR', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('TUTOR', 'ATHLETE', 'ADMIN')")
     public ResponseEntity<PaymentTransactionResponse> reportPagoMovil(
             Authentication authentication,
             @Valid @RequestBody ReportPagoMovilRequest request
@@ -75,7 +75,7 @@ public class PaymentController {
     }
 
     @PostMapping("/binance-pay/manual-report")
-    @PreAuthorize("hasAnyRole('TUTOR', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('TUTOR', 'ATHLETE', 'ADMIN')")
     public ResponseEntity<PaymentTransactionResponse> reportBinanceManual(
             Authentication authentication,
             @Valid @RequestBody ReportBinanceManualPaymentRequest request
@@ -87,7 +87,7 @@ public class PaymentController {
     }
 
     @PostMapping("/zelle/report")
-    @PreAuthorize("hasAnyRole('TUTOR', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('TUTOR', 'ATHLETE', 'ADMIN')")
     public ResponseEntity<PaymentTransactionResponse> reportZellePayment(
             Authentication authentication,
             @Valid @RequestBody ReportZellePaymentRequest request
@@ -99,7 +99,7 @@ public class PaymentController {
     }
 
     @PostMapping("/binance-pay/create-order")
-    @PreAuthorize("hasAnyRole('TUTOR', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('TUTOR', 'ATHLETE', 'ADMIN')")
     public ResponseEntity<CreateBinanceOrderResponse> createBinanceOrder(
             Authentication authentication,
             @Valid @RequestBody CreateBinanceOrderRequest request
@@ -143,7 +143,7 @@ public class PaymentController {
     }
 
     @GetMapping("/athlete/{athleteId}/status")
-    @PreAuthorize("hasAnyRole('TUTOR', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('TUTOR', 'ATHLETE', 'ADMIN')")
     public ResponseEntity<AthleteSubscriptionStatusResponse> getAthleteSubscriptionStatus(
             Authentication authentication,
             @PathVariable UUID athleteId
@@ -154,7 +154,7 @@ public class PaymentController {
     }
 
     @GetMapping("/history")
-    @PreAuthorize("hasRole('TUTOR')")
+    @PreAuthorize("hasAnyRole('TUTOR', 'ATHLETE')")
     public ResponseEntity<List<PaymentTransactionResponse>> getPaymentHistory(
             Authentication authentication
     ) {

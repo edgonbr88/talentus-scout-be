@@ -50,14 +50,14 @@ public class AthleteController {
     }
 
     @GetMapping("/my-athletes")
-    @PreAuthorize("hasRole('TUTOR')")
+    @PreAuthorize("hasAnyRole('TUTOR', 'ATHLETE')")
     public ResponseEntity<List<AthleteResponse>> getMyAthletes(Authentication authentication) {
         List<AthleteResponse> athletes = athleteService.getMyAthletes(authentication.getName());
         return ResponseEntity.ok(athletes);
     }
 
     @GetMapping("/radar")
-    @PreAuthorize("hasAnyRole('TUTOR', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('TUTOR', 'ATHLETE', 'ADMIN')")
     public ResponseEntity<TutorRadarMetricsResponse> getTutorRadar(Authentication authentication) {
         TutorRadarMetricsResponse metrics = scoutContactService.getTutorRadarMetrics(authentication.getName());
         return ResponseEntity.ok(metrics);

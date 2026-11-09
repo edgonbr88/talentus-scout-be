@@ -1,16 +1,21 @@
 package com.talentus.scout.service;
 
 import com.talentus.scout.config.JwtProperties;
+import com.talentus.scout.domain.entity.Athlete;
+import com.talentus.scout.domain.entity.AthleteLegalConsent;
 import com.talentus.scout.domain.entity.ClubOrganization;
 import com.talentus.scout.domain.entity.EmailVerificationToken;
 import com.talentus.scout.domain.entity.ScoutProfile;
 import com.talentus.scout.domain.entity.TutorLegalConsent;
 import com.talentus.scout.domain.entity.User;
 import com.talentus.scout.domain.enums.AccountStatus;
+import com.talentus.scout.domain.enums.LegalVerificationStatus;
 import com.talentus.scout.domain.enums.ScoutVerificationStatus;
 import com.talentus.scout.domain.enums.UserRole;
 import com.talentus.scout.exception.EmailAlreadyExistsException;
 import com.talentus.scout.exception.InvalidTokenException;
+import com.talentus.scout.repository.AthleteLegalConsentRepository;
+import com.talentus.scout.repository.AthleteRepository;
 import com.talentus.scout.repository.EmailVerificationTokenRepository;
 import com.talentus.scout.repository.ScoutProfileRepository;
 import com.talentus.scout.repository.TutorLegalConsentRepository;
@@ -25,6 +30,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.Period;
 import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 
@@ -42,6 +49,9 @@ public class AuthService {
     private final JwtProperties jwtProperties;
     private final ClubService clubService;
     private final AdminNotificationService adminNotificationService;
+    private final AthleteRepository athleteRepository;
+    private final AthleteLegalConsentRepository athleteLegalConsentRepository;
+    private final SlugService slugService;
 
     @Value("${talentus.frontend.base-url:http://localhost:4200}")
     private String frontendBaseUrl;
@@ -57,7 +67,10 @@ public class AuthService {
             JwtService jwtService,
             JwtProperties jwtProperties,
             ClubService clubService,
-            AdminNotificationService adminNotificationService
+            AdminNotificationService adminNotificationService,
+            AthleteRepository athleteRepository,
+            AthleteLegalConsentRepository athleteLegalConsentRepository,
+            SlugService slugService
     ) {
         this.userRepository = userRepository;
         this.tutorLegalConsentRepository = tutorLegalConsentRepository;
@@ -70,6 +83,9 @@ public class AuthService {
         this.jwtProperties = jwtProperties;
         this.clubService = clubService;
         this.adminNotificationService = adminNotificationService;
+        this.athleteRepository = athleteRepository;
+        this.athleteLegalConsentRepository = athleteLegalConsentRepository;
+        this.slugService = slugService;
     }
 
     @Transactional
@@ -279,6 +295,106 @@ public class AuthService {
                 .organizationName(savedProfile.getOrganizationName())
                 .scoutRole(savedProfile.getScoutRole())
                 .credentialsDocumentUrl(savedProfile.getCredentialsDocumentUrl())
+                .build();
+    }
+
+    @Transactional
+    public RegisterAdultAthleteResponse registerAdultAthlete(RegisterAdultAthleteRequest request, String ipAddress, String userAgent) {
+        if (request.getBirthDate() == null || Period.between(request.getBirthDate(), LocalDate.now()).getYears() < 18) {
+            throw new IllegalArgumentException("El registro directo de atleta requiere tener al menos 18 años cumplidos. Si eres menor de edad, tu registro debe ser gestionado por tu tutor legal.");
+        }
+
+        if (userRepository.existsByEmail(request.getEmail())) {
+            throw new EmailAlreadyExistsException("El correo ya se encuentra registrado: " + request.getEmail());
+        }
+
+        String storedDocUrl = null;
+        if (request.getIdDocumentFile() != null && !request.getIdDocumentFile().isEmpty()) {
+            storedDocUrl = fileStorageService.storeFile(request.getIdDocumentFile(), "identity-documents/athletes");
+        }
+
+        String storedSelfieUrl = null;
+        if (request.getSelfieFile() != null && !request.getSelfieFile().isEmpty()) {
+            storedSelfieUrl = fileStorageService.storeFile(request.getSelfieFile(), "selfies/athletes");
+        }
+
+        User user = User.builder()
+                .email(request.getEmail())
+                .passwordHash(passwordEncoder.encode(request.getPassword()))
+                .fullName(request.getFullName())
+                .phoneNumber(request.getPhoneNumber())
+                .country(request.getCountry())
+                .state(request.getState())
+                .address(request.getAddress())
+                .role(UserRole.ATHLETE)
+                .status(AccountStatus.ACTIVE)
+                .isProfileCompleted(true)
+                .build();
+        User savedUser = userRepository.save(user);
+
+        // Derivar nombres
+        String firstName = request.getFirstName();
+        String lastName = request.getLastName();
+        if (firstName == null || firstName.isBlank() || lastName == null || lastName.isBlank()) {
+            String full = request.getFullName().trim();
+            int idx = full.lastIndexOf(' ');
+            if (idx > 0) {
+                firstName = full.substring(0, idx).trim();
+                lastName = full.substring(idx + 1).trim();
+            } else {
+                firstName = full;
+                lastName = full;
+            }
+        }
+
+        String slug = slugService.generateUniqueSlug(firstName, lastName);
+
+        Athlete athlete = Athlete.builder()
+                .tutor(savedUser)
+                .firstName(firstName)
+                .lastName(lastName)
+                .birthDate(request.getBirthDate())
+                .gender(request.getGender() != null && !request.getGender().isBlank() ? request.getGender() : "MALE")
+                .primaryPosition(request.getPrimaryPosition())
+                .secondaryPosition(request.getSecondaryPosition())
+                .preferredFoot(request.getPreferredFoot())
+                .nationality(request.getNationality() != null && !request.getNationality().isBlank() ? request.getNationality() : "Venezolana")
+                .heightCm(request.getHeightCm())
+                .weightKg(request.getWeightKg())
+                .bio(request.getBio())
+                .slug(slug)
+                .isPublic(true)
+                .identityDocumentType(request.getIdDocumentType())
+                .identityDocumentNumber(request.getIdDocumentNumber())
+                .identityDocumentFileUrl(storedDocUrl)
+                .profilePhotoUrl(storedSelfieUrl)
+                .legalVerificationStatus(LegalVerificationStatus.PENDING_REVIEW)
+                .build();
+        Athlete savedAthlete = athleteRepository.save(athlete);
+
+        AthleteLegalConsent consent = AthleteLegalConsent.builder()
+                .athlete(savedAthlete)
+                .user(savedUser)
+                .acceptedTerms(Boolean.TRUE.equals(request.getAcceptTerms()))
+                .acceptedInstitutionalDiffusion(Boolean.TRUE.equals(request.getAcceptInstitutionalDiffusion()))
+                .termsVersion("1.0")
+                .ipAddress((ipAddress != null && !ipAddress.isBlank()) ? ipAddress : "127.0.0.1")
+                .userAgent((userAgent != null && !userAgent.isBlank()) ? userAgent : "UNKNOWN")
+                .acceptedAt(Instant.now())
+                .build();
+        athleteLegalConsentRepository.save(consent);
+
+        String token = jwtService.generateToken(savedUser);
+
+        return RegisterAdultAthleteResponse.builder()
+                .userId(savedUser.getId())
+                .athleteId(savedAthlete.getId())
+                .token(token)
+                .fullName(savedUser.getFullName())
+                .email(savedUser.getEmail())
+                .role(savedUser.getRole().name())
+                .slug(savedAthlete.getSlug())
+                .message("Registro de atleta mayor de edad completado exitosamente.")
                 .build();
     }
 }
