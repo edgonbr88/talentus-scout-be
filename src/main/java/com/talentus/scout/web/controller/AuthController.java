@@ -145,6 +145,28 @@ public class AuthController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
+    @PostMapping(value = "/register-athlete", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<RegisterAdultAthleteResponse> registerAdultAthleteMultipart(
+            @Valid @ModelAttribute RegisterAdultAthleteRequest request,
+            HttpServletRequest httpRequest
+    ) {
+        String clientIp = extractClientIp(httpRequest);
+        String userAgent = extractUserAgent(httpRequest);
+        RegisterAdultAthleteResponse response = authService.registerAdultAthlete(request, clientIp, userAgent);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @PostMapping(value = "/register-athlete", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<RegisterAdultAthleteResponse> registerAdultAthleteJson(
+            @Valid @RequestBody RegisterAdultAthleteRequest request,
+            HttpServletRequest httpRequest
+    ) {
+        String clientIp = extractClientIp(httpRequest);
+        String userAgent = extractUserAgent(httpRequest);
+        RegisterAdultAthleteResponse response = authService.registerAdultAthlete(request, clientIp, userAgent);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
     @PostMapping("/social/google")
     public ResponseEntity<SocialAuthResponse> authenticateWithGoogle(
             @Valid @RequestBody SocialAuthRequest request,
