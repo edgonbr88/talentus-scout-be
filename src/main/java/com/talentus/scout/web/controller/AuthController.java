@@ -223,6 +223,7 @@ public class AuthController {
             scoutProfileRepository.findByUserId(user.getId()).ifPresent(scout -> {
                 response.setScoutVerificationStatus(scout.getVerificationStatus());
                 response.setRejectionReason(scout.getRejectionReason());
+                response.setBulkImportEnabled(scout.isBulkImportEnabled());
             });
         }
 

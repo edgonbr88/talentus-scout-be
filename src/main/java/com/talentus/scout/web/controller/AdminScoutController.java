@@ -45,4 +45,19 @@ public class AdminScoutController {
         ScoutReviewResponse response = adminScoutService.reviewScout(scoutProfileId, request, adminEmail);
         return ResponseEntity.ok(response);
     }
+
+    @GetMapping
+    public ResponseEntity<Page<PendingScoutResponse>> getAllScouts(
+            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
+    ) {
+        return ResponseEntity.ok(adminScoutService.getAllScouts(pageable));
+    }
+
+    @PatchMapping("/{scoutProfileId}/bulk-import")
+    public ResponseEntity<PendingScoutResponse> toggleBulkImport(
+            @PathVariable UUID scoutProfileId,
+            @RequestParam("enabled") boolean enabled
+    ) {
+        return ResponseEntity.ok(adminScoutService.toggleBulkImport(scoutProfileId, enabled));
+    }
 }

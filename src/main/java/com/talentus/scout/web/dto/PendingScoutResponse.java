@@ -31,5 +31,6 @@ public class PendingScoutResponse {
     private String selfieUrl;
     private String linkedinUrl;
     private ScoutVerificationStatus verificationStatus;
+    private boolean bulkImportEnabled;
     private Instant createdAt;
 }

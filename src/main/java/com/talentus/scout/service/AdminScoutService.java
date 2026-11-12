@@ -77,6 +77,7 @@ public class AdminScoutService {
                             .selfieUrl(presignedSelfieUrl)
                             .linkedinUrl(profile.getLinkedinUrl())
                             .verificationStatus(profile.getVerificationStatus())
+                            .bulkImportEnabled(profile.isBulkImportEnabled())
                             .createdAt(profile.getCreatedAt())
                             .build();
                 });
@@ -139,6 +140,48 @@ public class AdminScoutService {
                 .message(scout.getVerificationStatus() == ScoutVerificationStatus.APPROVED
                         ? "Reclutador aprobado exitosamente y habilitado para búsqueda de talentos."
                         : "Solicitud de reclutador rechazada con motivo documentado.")
+                .build();
+    }
+
+    @Transactional(readOnly = true)
+    public Page<PendingScoutResponse> getAllScouts(Pageable pageable) {
+        return scoutProfileRepository.findAll(pageable)
+                .map(profile -> PendingScoutResponse.builder()
+                        .scoutProfileId(profile.getId())
+                        .userId(profile.getUser().getId())
+                        .fullName(profile.getUser().getFullName())
+                        .email(profile.getUser().getEmail())
+                        .phoneNumber(profile.getUser().getPhoneNumber())
+                        .organizationName(profile.getOrganizationName())
+                        .scoutRole(profile.getScoutRole())
+                        .verificationStatus(profile.getVerificationStatus())
+                        .bulkImportEnabled(profile.isBulkImportEnabled())
+                        .createdAt(profile.getCreatedAt())
+                        .build());
+    }
+
+    @Transactional
+    public PendingScoutResponse toggleBulkImport(UUID scoutProfileId, boolean enabled) {
+        ScoutProfile profile = scoutProfileRepository.findById(scoutProfileId)
+                .orElseThrow(() -> new ResourceNotFoundException("Perfil de scout no encontrado con ID: " + scoutProfileId));
+
+        profile.setBulkImportEnabled(enabled);
+        scoutProfileRepository.save(profile);
+
+        log.info("Carga masiva {} para el scout {} ({})", enabled ? "habilitada" : "deshabilitada",
+                profile.getUser().getFullName(), profile.getUser().getEmail());
+
+        return PendingScoutResponse.builder()
+                .scoutProfileId(profile.getId())
+                .userId(profile.getUser().getId())
+                .fullName(profile.getUser().getFullName())
+                .email(profile.getUser().getEmail())
+                .phoneNumber(profile.getUser().getPhoneNumber())
+                .organizationName(profile.getOrganizationName())
+                .scoutRole(profile.getScoutRole())
+                .verificationStatus(profile.getVerificationStatus())
+                .bulkImportEnabled(profile.isBulkImportEnabled())
+                .createdAt(profile.getCreatedAt())
                 .build();
     }
 }

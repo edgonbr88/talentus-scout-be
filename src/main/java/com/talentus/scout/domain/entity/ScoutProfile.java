@@ -61,6 +61,10 @@ public class ScoutProfile {
     @Column(name = "verification_status", columnDefinition = "scout_verification_status", nullable = false)
     private ScoutVerificationStatus verificationStatus = ScoutVerificationStatus.PENDING;
 
+    @Builder.Default
+    @Column(name = "bulk_import_enabled", nullable = false)
+    private boolean bulkImportEnabled = false;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "reviewed_by_admin_id")
     private User reviewedByAdmin;
