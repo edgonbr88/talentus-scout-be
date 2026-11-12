@@ -48,9 +48,10 @@ public class AdminScoutController {
 
     @GetMapping
     public ResponseEntity<Page<PendingScoutResponse>> getAllScouts(
-            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
+            @RequestParam(name = "query", required = false) String query,
+            @PageableDefault(size = 50, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
     ) {
-        return ResponseEntity.ok(adminScoutService.getAllScouts(pageable));
+        return ResponseEntity.ok(adminScoutService.getAllScouts(query, pageable));
     }
 
     @PatchMapping("/{scoutProfileId}/bulk-import")

@@ -28,5 +28,13 @@ public interface ScoutProfileRepository extends JpaRepository<ScoutProfile, UUID
     List<ScoutProfile> findByOrganizationNameIgnoreCase(String organizationName);
 
     long countByOrganizationNameIgnoreCase(String organizationName);
+
+    @Query("SELECT s FROM ScoutProfile s WHERE " +
+           "(:query IS NULL OR :query = '' OR " +
+           "LOWER(s.user.fullName) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
+           "LOWER(s.user.email) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
+           "LOWER(s.organizationName) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
+           "LOWER(s.scoutRole) LIKE LOWER(CONCAT('%', :query, '%')))")
+    Page<ScoutProfile> searchScouts(@Param("query") String query, Pageable pageable);
 }
 

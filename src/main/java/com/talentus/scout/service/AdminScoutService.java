@@ -144,8 +144,8 @@ public class AdminScoutService {
     }
 
     @Transactional(readOnly = true)
-    public Page<PendingScoutResponse> getAllScouts(Pageable pageable) {
-        return scoutProfileRepository.findAll(pageable)
+    public Page<PendingScoutResponse> getAllScouts(String query, Pageable pageable) {
+        return scoutProfileRepository.searchScouts(query, pageable)
                 .map(profile -> PendingScoutResponse.builder()
                         .scoutProfileId(profile.getId())
                         .userId(profile.getUser().getId())
