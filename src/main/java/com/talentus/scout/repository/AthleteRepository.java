@@ -16,8 +16,10 @@ import java.util.UUID;
 @Repository
 public interface AthleteRepository extends JpaRepository<Athlete, UUID>, JpaSpecificationExecutor<Athlete> {
     List<Athlete> findByTutorIdOrderByCreatedAtDesc(UUID tutorId);
+    List<Athlete> findByTutorIdAndDeletedAtIsNull(UUID tutorId);
     Optional<Athlete> findBySlug(String slug);
     boolean existsBySlug(String slug);
+    boolean existsByIdentityDocumentNumberAndDeletedAtIsNull(String identityDocumentNumber);
 
     Page<Athlete> findByLegalVerificationStatusAndIdentityDocumentFileUrlIsNotNullOrderByUpdatedAtDesc(LegalVerificationStatus status, Pageable pageable);
     long countByLegalVerificationStatusAndIdentityDocumentFileUrlIsNotNull(LegalVerificationStatus status);
