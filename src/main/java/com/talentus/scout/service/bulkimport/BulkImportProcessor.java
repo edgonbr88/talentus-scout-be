@@ -46,6 +46,8 @@ public class BulkImportProcessor {
         }
 
         BulkImportJob job = optJob.get();
+        // Capturar el club hidratado antes de merge/save fuera de sesión JPA
+        ClubOrganization resolvedClub = job.getClub();
         job.setStatus(BulkImportStatus.PROCESSING);
         job.setTotalRows(rows.size());
         job.setProcessedRows(0);
@@ -53,6 +55,7 @@ public class BulkImportProcessor {
         job.setFailedRows(0);
         job = jobRepository.save(job);
 
+        try {
         List<BulkImportRowErrorDto> warnings = new ArrayList<>();
         Map<String, User> tutorCache = new HashMap<>(); // email -> User
         Map<String, List<String>> tutorToAthletes = new HashMap<>(); // email -> List of athlete names
@@ -126,8 +129,8 @@ public class BulkImportProcessor {
                     } else {
                         // Crear nuevo tutor con contraseña temporal aleatoria encriptada
                         String tempPassword = UUID.randomUUID().toString();
-                        String tutorCountry = (job.getClub() != null && job.getClub().getCountry() != null && !job.getClub().getCountry().isBlank())
-                                ? job.getClub().getCountry()
+                        String tutorCountry = (resolvedClub != null && resolvedClub.getCountry() != null && !resolvedClub.getCountry().isBlank())
+                                ? resolvedClub.getCountry()
                                 : AthleteFieldNormalizer.resolveAuthorizedCountryOrDefault(row.getNacionalidad());
                         tutor = User.builder()
                                 .email(tutorEmail)
@@ -171,7 +174,7 @@ public class BulkImportProcessor {
                         .heightCm(row.getAlturaCm())
                         .weightKg(row.getPesoKg())
                         .identityDocumentNumber(row.getCedulaIdentidadAtleta())
-                        .currentClub(job.getClub())
+                        .currentClub(resolvedClub)
                         .slug(slug)
                         .isPublic(true)
                         .legalVerificationStatus(LegalVerificationStatus.PENDING_REVIEW)
@@ -242,5 +245,11 @@ public class BulkImportProcessor {
 
         log.info("BulkImportJob [{}] completado exitosamente con {} filas exitosas y {} advertencias",
                 jobId, job.getSuccessfulRows(), warnings.size());
+        } catch (Exception fatalEx) {
+            log.error("Error fatal procesando BulkImportJob [{}]: {}", jobId, fatalEx.getMessage(), fatalEx);
+            job.setStatus(BulkImportStatus.FAILED);
+            job.setErrorSummary("Error procesando el lote: " + fatalEx.getMessage());
+            jobRepository.save(job);
+        }
     }
 }

@@ -25,6 +25,8 @@ import org.apache.poi.ss.util.CellRangeAddressList;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.ByteArrayOutputStream;
@@ -99,8 +101,8 @@ public class BulkImportService {
 
         job = jobRepository.save(job);
 
-        // Disparar procesamiento asíncrono
-        processor.processImportJob(job.getId(), rows);
+        // Disparar procesamiento asíncrono solo tras confirmar commit para evitar race conditions
+        scheduleAsyncProcessing(job.getId(), rows);
 
         return mapToResponseDto(job);
     }
@@ -149,10 +151,24 @@ public class BulkImportService {
 
         job = jobRepository.save(job);
 
-        // Disparar procesamiento asíncrono
-        processor.processImportJob(job.getId(), rows);
+        // Disparar procesamiento asíncrono solo tras confirmar commit para evitar race conditions
+        scheduleAsyncProcessing(job.getId(), rows);
 
         return mapToResponseDto(job);
+    }
+
+    private void scheduleAsyncProcessing(UUID jobId, List<BulkImportRowDto> rows) {
+        if (TransactionSynchronizationManager.isActualTransactionActive()
+                && TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    processor.processImportJob(jobId, rows);
+                }
+            });
+        } else {
+            processor.processImportJob(jobId, rows);
+        }
     }
 
     @Transactional(readOnly = true)
