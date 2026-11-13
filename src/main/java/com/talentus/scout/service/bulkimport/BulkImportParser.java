@@ -1,5 +1,6 @@
 package com.talentus.scout.service.bulkimport;
 
+import com.talentus.scout.util.AthleteFieldNormalizer;
 import com.talentus.scout.web.dto.bulkimport.BulkImportRowDto;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.csv.CSVFormat;
@@ -148,72 +149,62 @@ public class BulkImportParser {
     }
 
     private BulkImportRowDto mapCsvRecordToDto(CSVRecord record, int rowNum) {
-        return BulkImportRowDto.builder()
-                .rowNumber(rowNum)
-                .primerNombre(clean(record.get("primer_nombre")))
-                .segundoNombre(clean(record.get("segundo_nombre")))
-                .primerApellido(clean(record.get("primer_apellido")))
-                .segundoApellido(clean(record.get("segundo_apellido")))
-                .cedulaIdentidadAtleta(clean(record.get("cedula_identidad_atleta")))
-                .fechaNacimiento(parseDate(clean(record.get("fecha_nacimiento"))))
-                .genero(normalizeGender(clean(record.get("genero"))))
-                .posicionPrincipal(clean(record.get("posicion_principal")))
-                .posicionSecundaria(clean(record.get("posicion_secundaria")))
-                .pieDominante(normalizeFoot(clean(record.get("pie_dominante"))))
-                .nacionalidad(defaultString(clean(record.get("nacionalidad")), "Venezolana"))
-                .alturaCm(parseBigDecimal(clean(record.get("altura_cm"))))
-                .pesoKg(parseBigDecimal(clean(record.get("peso_kg"))))
-                .nombreCompletoTutor(clean(record.get("nombre_completo_tutor")))
-                .cedulaIdentidadTutor(clean(record.get("cedula_identidad_tutor")))
-                .correoTutor(clean(record.get("correo_tutor")))
-                .telefonoTutor(clean(record.get("telefono_tutor")))
-                .build();
+        return buildRowDto(rowNum, col -> record.isMapped(col) ? record.get(col) : null);
     }
 
     private BulkImportRowDto mapExcelRowToDto(Row row, Map<String, Integer> headerMap, int rowNum) {
-        return BulkImportRowDto.builder()
-                .rowNumber(rowNum)
-                .primerNombre(clean(getVal(row, headerMap, "primer_nombre")))
-                .segundoNombre(clean(getVal(row, headerMap, "segundo_nombre")))
-                .primerApellido(clean(getVal(row, headerMap, "primer_apellido")))
-                .segundoApellido(clean(getVal(row, headerMap, "segundo_apellido")))
-                .cedulaIdentidadAtleta(clean(getVal(row, headerMap, "cedula_identidad_atleta")))
-                .fechaNacimiento(parseDate(getVal(row, headerMap, "fecha_nacimiento")))
-                .genero(normalizeGender(clean(getVal(row, headerMap, "genero"))))
-                .posicionPrincipal(clean(getVal(row, headerMap, "posicion_principal")))
-                .posicionSecundaria(clean(getVal(row, headerMap, "posicion_secundaria")))
-                .pieDominante(normalizeFoot(clean(getVal(row, headerMap, "pie_dominante"))))
-                .nacionalidad(defaultString(clean(getVal(row, headerMap, "nacionalidad")), "Venezolana"))
-                .alturaCm(parseBigDecimal(getVal(row, headerMap, "altura_cm")))
-                .pesoKg(parseBigDecimal(getVal(row, headerMap, "peso_kg")))
-                .nombreCompletoTutor(clean(getVal(row, headerMap, "nombre_completo_tutor")))
-                .cedulaIdentidadTutor(clean(getVal(row, headerMap, "cedula_identidad_tutor")))
-                .correoTutor(clean(getVal(row, headerMap, "correo_tutor")))
-                .telefonoTutor(clean(getVal(row, headerMap, "telefono_tutor")))
-                .build();
+        return buildRowDto(rowNum, col -> getVal(row, headerMap, col));
     }
 
     private BulkImportRowDto mapMatrixRowToDto(List<Object> row, Map<String, Integer> headerMap, int rowNum) {
+        return buildRowDto(rowNum, col -> getMatrixVal(row, headerMap, col));
+    }
+
+    private BulkImportRowDto buildRowDto(int rowNum, java.util.function.Function<String, String> fieldExtractor) {
+        List<String> rowErrors = new ArrayList<>();
+
+        String rawBirthDate = clean(fieldExtractor.apply("fecha_nacimiento"));
+        LocalDate parsedBirthDate = parseDate(rawBirthDate);
+        if (rawBirthDate != null && parsedBirthDate == null) {
+            rowErrors.add("Formato de fecha inválido en 'fecha_nacimiento': '" + rawBirthDate + "' (use AAAA-MM-DD o DD/MM/AAAA)");
+        }
+
+        String genero = normalizeSafely(() -> AthleteFieldNormalizer.normalizeGender(clean(fieldExtractor.apply("genero"))), "MALE", rowErrors);
+        String posicionPrincipal = normalizeSafely(() -> AthleteFieldNormalizer.normalizePosition(clean(fieldExtractor.apply("posicion_principal")), true), null, rowErrors);
+        String posicionSecundaria = normalizeSafely(() -> AthleteFieldNormalizer.normalizePosition(clean(fieldExtractor.apply("posicion_secundaria")), false), null, rowErrors);
+        String pieDominante = normalizeSafely(() -> AthleteFieldNormalizer.normalizePreferredFoot(clean(fieldExtractor.apply("pie_dominante"))), "DERECHO", rowErrors);
+        String nacionalidad = normalizeSafely(() -> AthleteFieldNormalizer.normalizeNationality(clean(fieldExtractor.apply("nacionalidad"))), "Venezuela", rowErrors);
+
         return BulkImportRowDto.builder()
                 .rowNumber(rowNum)
-                .primerNombre(clean(getMatrixVal(row, headerMap, "primer_nombre")))
-                .segundoNombre(clean(getMatrixVal(row, headerMap, "segundo_nombre")))
-                .primerApellido(clean(getMatrixVal(row, headerMap, "primer_apellido")))
-                .segundoApellido(clean(getMatrixVal(row, headerMap, "segundo_apellido")))
-                .cedulaIdentidadAtleta(clean(getMatrixVal(row, headerMap, "cedula_identidad_atleta")))
-                .fechaNacimiento(parseDate(getMatrixVal(row, headerMap, "fecha_nacimiento")))
-                .genero(normalizeGender(clean(getMatrixVal(row, headerMap, "genero"))))
-                .posicionPrincipal(clean(getMatrixVal(row, headerMap, "posicion_principal")))
-                .posicionSecundaria(clean(getMatrixVal(row, headerMap, "posicion_secundaria")))
-                .pieDominante(normalizeFoot(clean(getMatrixVal(row, headerMap, "pie_dominante"))))
-                .nacionalidad(defaultString(clean(getMatrixVal(row, headerMap, "nacionalidad")), "Venezolana"))
-                .alturaCm(parseBigDecimal(getMatrixVal(row, headerMap, "altura_cm")))
-                .pesoKg(parseBigDecimal(getMatrixVal(row, headerMap, "peso_kg")))
-                .nombreCompletoTutor(clean(getMatrixVal(row, headerMap, "nombre_completo_tutor")))
-                .cedulaIdentidadTutor(clean(getMatrixVal(row, headerMap, "cedula_identidad_tutor")))
-                .correoTutor(clean(getMatrixVal(row, headerMap, "correo_tutor")))
-                .telefonoTutor(clean(getMatrixVal(row, headerMap, "telefono_tutor")))
+                .primerNombre(clean(fieldExtractor.apply("primer_nombre")))
+                .segundoNombre(clean(fieldExtractor.apply("segundo_nombre")))
+                .primerApellido(clean(fieldExtractor.apply("primer_apellido")))
+                .segundoApellido(clean(fieldExtractor.apply("segundo_apellido")))
+                .cedulaIdentidadAtleta(clean(fieldExtractor.apply("cedula_identidad_atleta")))
+                .fechaNacimiento(parsedBirthDate)
+                .genero(genero)
+                .posicionPrincipal(posicionPrincipal)
+                .posicionSecundaria(posicionSecundaria)
+                .pieDominante(pieDominante)
+                .nacionalidad(nacionalidad)
+                .alturaCm(parseBigDecimal(clean(fieldExtractor.apply("altura_cm"))))
+                .pesoKg(parseBigDecimal(clean(fieldExtractor.apply("peso_kg"))))
+                .nombreCompletoTutor(clean(fieldExtractor.apply("nombre_completo_tutor")))
+                .cedulaIdentidadTutor(clean(fieldExtractor.apply("cedula_identidad_tutor")))
+                .correoTutor(clean(fieldExtractor.apply("correo_tutor")))
+                .telefonoTutor(clean(fieldExtractor.apply("telefono_tutor")))
+                .validationError(rowErrors.isEmpty() ? null : String.join("; ", rowErrors))
                 .build();
+    }
+
+    private String normalizeSafely(java.util.function.Supplier<String> normalizer, String fallback, List<String> errors) {
+        try {
+            return normalizer.get();
+        } catch (IllegalArgumentException ex) {
+            errors.add(ex.getMessage());
+            return fallback;
+        }
     }
 
     private String getVal(Row row, Map<String, Integer> headerMap, String colName) {
@@ -275,10 +266,6 @@ public class BulkImportParser {
         return t.isEmpty() ? null : t;
     }
 
-    private String defaultString(String val, String def) {
-        return (val == null || val.isBlank()) ? def : val;
-    }
-
     private LocalDate parseDate(String val) {
         if (val == null || val.isBlank()) return null;
         val = val.trim();
@@ -301,29 +288,5 @@ public class BulkImportParser {
         } catch (Exception e) {
             return null;
         }
-    }
-
-    private String normalizeGender(String g) {
-        if (g == null) return "MALE";
-        String low = g.trim().toUpperCase();
-        if (low.startsWith("M") || low.contains("MASCULINO") || low.equals("HOMBRE")) {
-            return "MALE";
-        }
-        if (low.startsWith("F") || low.contains("FEMENINO") || low.equals("MUJER")) {
-            return "FEMALE";
-        }
-        return "MALE";
-    }
-
-    private String normalizeFoot(String f) {
-        if (f == null) return "RIGHT";
-        String low = f.trim().toUpperCase();
-        if (low.contains("ZURD") || low.contains("IZQ") || low.equals("LEFT")) {
-            return "LEFT";
-        }
-        if (low.contains("AMB") || low.equals("AMBIDEXTROUS")) {
-            return "AMBIDEXTROUS";
-        }
-        return "RIGHT";
     }
 }

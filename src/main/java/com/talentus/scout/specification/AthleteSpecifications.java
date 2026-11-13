@@ -3,11 +3,13 @@ package com.talentus.scout.specification;
 import com.talentus.scout.domain.entity.Athlete;
 import com.talentus.scout.domain.entity.AthleteVideo;
 import com.talentus.scout.domain.enums.VideoStatus;
+import com.talentus.scout.util.AthleteFieldNormalizer;
 import jakarta.persistence.criteria.Root;
 import jakarta.persistence.criteria.Subquery;
 import org.springframework.data.jpa.domain.Specification;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 
 public final class AthleteSpecifications {
@@ -59,14 +61,16 @@ public final class AthleteSpecifications {
         if (primaryPosition == null || primaryPosition.isBlank()) {
             return null;
         }
-        return (root, query, cb) -> cb.equal(cb.upper(root.get("primaryPosition")), primaryPosition.trim().toUpperCase());
+        List<String> equivalents = AthleteFieldNormalizer.getEquivalentPositionFilterValues(primaryPosition);
+        return (root, query, cb) -> cb.upper(root.get("primaryPosition")).in(equivalents);
     }
 
     public static Specification<Athlete> withPreferredFoot(String preferredFoot) {
         if (preferredFoot == null || preferredFoot.isBlank()) {
             return null;
         }
-        return (root, query, cb) -> cb.equal(cb.upper(root.get("preferredFoot")), preferredFoot.trim().toUpperCase());
+        List<String> equivalents = AthleteFieldNormalizer.getEquivalentFootFilterValues(preferredFoot);
+        return (root, query, cb) -> cb.upper(root.get("preferredFoot")).in(equivalents);
     }
 
     public static Specification<Athlete> withClubId(UUID clubId) {

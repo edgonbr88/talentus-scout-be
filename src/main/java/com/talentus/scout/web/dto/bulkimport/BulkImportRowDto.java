@@ -31,4 +31,5 @@ public class BulkImportRowDto {
     private String cedulaIdentidadTutor;
     private String correoTutor;
     private String telefonoTutor;
+    private String validationError;
 }

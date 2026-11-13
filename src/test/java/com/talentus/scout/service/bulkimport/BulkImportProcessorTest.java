@@ -119,4 +119,61 @@ class BulkImportProcessorTest {
         assertEquals(1, job.getSuccessfulRows());
         assertEquals(1, job.getFailedRows());
     }
+
+    @Test
+    void testRowWithValidationErrorIsOmittedAndValidTutorReceivesCountry() {
+        UUID jobId = UUID.randomUUID();
+        User scout = User.builder().id(UUID.randomUUID()).email("scout@club.com").fullName("Scout Master").build();
+        BulkImportJob job = BulkImportJob.builder()
+                .id(jobId)
+                .scout(scout)
+                .organizationName("Academia Test")
+                .sourceType(BulkImportSourceType.FILE_EXCEL)
+                .status(BulkImportStatus.PENDING)
+                .build();
+
+        when(jobRepository.findById(jobId)).thenReturn(Optional.of(job));
+        when(jobRepository.save(any(BulkImportJob.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(userRepository.findByEmail("tutor.valido@ejemplo.com")).thenReturn(Optional.empty());
+        when(userRepository.save(any(User.class))).thenAnswer(inv -> {
+            User u = inv.getArgument(0);
+            u.setId(UUID.randomUUID());
+            return u;
+        });
+
+        BulkImportRowDto invalidRow = BulkImportRowDto.builder()
+                .rowNumber(2)
+                .primerNombre("Pedro")
+                .primerApellido("Error")
+                .validationError("Posición inválida: 'Inventada'")
+                .build();
+
+        BulkImportRowDto validRow = BulkImportRowDto.builder()
+                .rowNumber(3)
+                .primerNombre("Mateo")
+                .primerApellido("Valido")
+                .fechaNacimiento(LocalDate.of(2011, 6, 1))
+                .genero("MALE")
+                .posicionPrincipal("Delantero Centro")
+                .pieDominante("DERECHO")
+                .nacionalidad("Chile")
+                .nombreCompletoTutor("Laura Valida")
+                .correoTutor("tutor.valido@ejemplo.com")
+                .build();
+
+        processor.processImportJob(jobId, List.of(invalidRow, validRow));
+
+        ArgumentCaptor<User> tutorCaptor = ArgumentCaptor.forClass(User.class);
+        verify(userRepository, times(1)).save(tutorCaptor.capture());
+        assertEquals("Chile", tutorCaptor.getValue().getCountry());
+
+        ArgumentCaptor<Athlete> athleteCaptor = ArgumentCaptor.forClass(Athlete.class);
+        verify(athleteRepository, times(1)).save(athleteCaptor.capture());
+        assertEquals("DERECHO", athleteCaptor.getValue().getPreferredFoot());
+        assertEquals("Chile", athleteCaptor.getValue().getNationality());
+
+        assertEquals(1, job.getSuccessfulRows());
+        assertEquals(1, job.getFailedRows());
+        assertTrue(job.getErrorReportJson().contains("Posición inválida"));
+    }
 }

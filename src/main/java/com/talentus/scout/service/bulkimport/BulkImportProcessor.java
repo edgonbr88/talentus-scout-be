@@ -7,6 +7,7 @@ import com.talentus.scout.domain.enums.*;
 import com.talentus.scout.repository.*;
 import com.talentus.scout.service.SlugService;
 import com.talentus.scout.service.mail.EmailService;
+import com.talentus.scout.util.AthleteFieldNormalizer;
 import com.talentus.scout.web.dto.bulkimport.BulkImportRowDto;
 import com.talentus.scout.web.dto.bulkimport.BulkImportRowErrorDto;
 import lombok.RequiredArgsConstructor;
@@ -61,6 +62,18 @@ public class BulkImportProcessor {
             job.setProcessedRows(job.getProcessedRows() + 1);
 
             try {
+                // 0. Validaciones de formato y catálogo detectadas durante el parseo
+                if (row.getValidationError() != null && !row.getValidationError().isBlank()) {
+                    warnings.add(BulkImportRowErrorDto.builder()
+                            .rowNumber(row.getRowNumber())
+                            .athleteName((row.getPrimerNombre() != null ? row.getPrimerNombre() : "") + " " + (row.getPrimerApellido() != null ? row.getPrimerApellido() : ""))
+                            .reason(row.getValidationError())
+                            .actionTaken("FILA_OMITIDA")
+                            .build());
+                    job.setFailedRows(job.getFailedRows() + 1);
+                    continue;
+                }
+
                 // 1. Validaciones básicas de campos obligatorios
                 if (row.getPrimerNombre() == null || row.getPrimerApellido() == null ||
                         row.getFechaNacimiento() == null || row.getPosicionPrincipal() == null ||
@@ -113,10 +126,14 @@ public class BulkImportProcessor {
                     } else {
                         // Crear nuevo tutor con contraseña temporal aleatoria encriptada
                         String tempPassword = UUID.randomUUID().toString();
+                        String tutorCountry = (job.getClub() != null && job.getClub().getCountry() != null && !job.getClub().getCountry().isBlank())
+                                ? job.getClub().getCountry()
+                                : AthleteFieldNormalizer.resolveAuthorizedCountryOrDefault(row.getNacionalidad());
                         tutor = User.builder()
                                 .email(tutorEmail)
                                 .fullName(row.getNombreCompletoTutor())
                                 .phoneNumber(row.getTelefonoTutor() != null ? row.getTelefonoTutor() : "")
+                                .country(tutorCountry)
                                 .passwordHash(passwordEncoder.encode(tempPassword))
                                 .role(UserRole.TUTOR)
                                 .status(AccountStatus.ACTIVE)
@@ -149,8 +166,8 @@ public class BulkImportProcessor {
                         .gender(row.getGenero() != null ? row.getGenero() : "MALE")
                         .primaryPosition(row.getPosicionPrincipal())
                         .secondaryPosition(row.getPosicionSecundaria())
-                        .preferredFoot(row.getPieDominante() != null ? row.getPieDominante() : "RIGHT")
-                        .nationality(row.getNacionalidad() != null ? row.getNacionalidad() : "Venezolana")
+                        .preferredFoot(row.getPieDominante() != null ? row.getPieDominante() : "DERECHO")
+                        .nationality(row.getNacionalidad() != null ? row.getNacionalidad() : "Venezuela")
                         .heightCm(row.getAlturaCm())
                         .weightKg(row.getPesoKg())
                         .identityDocumentNumber(row.getCedulaIdentidadAtleta())
