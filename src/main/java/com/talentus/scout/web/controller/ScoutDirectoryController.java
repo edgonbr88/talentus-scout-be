@@ -30,8 +30,8 @@ public class ScoutDirectoryController {
 
     @GetMapping("/directory/birth-years")
     @PreAuthorize("hasAnyRole('SCOUT', 'ADMIN') and @scoutSecurity.isVerifiedScout(authentication)")
-    public ResponseEntity<List<Integer>> getAvailableBirthYears() {
-        List<Integer> years = scoutDirectoryService.getAvailableBirthYears();
+    public ResponseEntity<List<Integer>> getAvailableBirthYears(Authentication authentication) {
+        List<Integer> years = scoutDirectoryService.getAvailableBirthYears(authentication);
         return ResponseEntity.ok(years);
     }
 
@@ -47,7 +47,8 @@ public class ScoutDirectoryController {
             @RequestParam(required = false) Boolean hasEuropeanPassport,
             @RequestParam(required = false) Boolean hasVideo,
             @RequestParam(required = false) String residenceCountry,
-            @PageableDefault(page = 0, size = 12, sort = "updatedAt", direction = Sort.Direction.DESC) Pageable pageable
+            @PageableDefault(page = 0, size = 12, sort = "updatedAt", direction = Sort.Direction.DESC) Pageable pageable,
+            Authentication authentication
     ) {
         AthleteFilterCriteria criteria = AthleteFilterCriteria.builder()
                 .birthYear(birthYear)
@@ -61,7 +62,7 @@ public class ScoutDirectoryController {
                 .residenceCountry(residenceCountry)
                 .build();
 
-        Page<ScoutDirectoryAthleteItem> result = scoutDirectoryService.searchDirectory(criteria, pageable);
+        Page<ScoutDirectoryAthleteItem> result = scoutDirectoryService.searchDirectory(criteria, pageable, authentication);
         return ResponseEntity.ok(result);
     }
 

@@ -16,6 +16,7 @@ public interface ClubOrganizationRepository extends JpaRepository<ClubOrganizati
     List<ClubOrganization> findAllByOrderByNameAsc();
     List<ClubOrganization> findByNameContainingIgnoreCase(String name);
     Optional<ClubOrganization> findByNameIgnoreCase(String name);
+    Optional<ClubOrganization> findFirstByNameIgnoreCase(String name);
 
     long countByVerifiedOfficial(boolean verifiedOfficial);
 }

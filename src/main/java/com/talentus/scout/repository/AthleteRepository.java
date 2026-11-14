@@ -29,12 +29,24 @@ public interface AthleteRepository extends JpaRepository<Athlete, UUID>, JpaSpec
             "FROM athletes a " +
             "INNER JOIN athlete_subscriptions s ON a.id = s.athlete_id " +
             "WHERE a.is_public = TRUE " +
+            "AND a.deleted_at IS NULL " +
             "AND a.legal_verification_status = 'APPROVED' " +
             "AND a.birth_date IS NOT NULL " +
             "AND s.status = 'ACTIVE' " +
             "AND s.end_date >= NOW() " +
             "ORDER BY 1 DESC", nativeQuery = true)
     List<Integer> findDistinctBirthYearsWithActiveRadar();
+
+    @Query(value = "SELECT DISTINCT CAST(EXTRACT(YEAR FROM a.birth_date) AS INTEGER) " +
+            "FROM athletes a " +
+            "LEFT JOIN athlete_subscriptions s ON a.id = s.athlete_id " +
+            "AND s.status = 'ACTIVE' AND s.end_date >= NOW() " +
+            "WHERE a.deleted_at IS NULL " +
+            "AND a.birth_date IS NOT NULL " +
+            "AND (a.current_club_id = :clubId " +
+            "OR (a.is_public = TRUE AND a.legal_verification_status = 'APPROVED' AND s.id IS NOT NULL)) " +
+            "ORDER BY 1 DESC", nativeQuery = true)
+    List<Integer> findDistinctBirthYearsForDirectoryWithClub(@org.springframework.data.repository.query.Param("clubId") UUID clubId);
 
     long countByCurrentClubId(UUID clubId);
 

@@ -483,4 +483,104 @@ class ScoutDirectoryIntegrationTest {
                 .andExpect(jsonPath("$.content[*].slug", hasItem(athleteDefender2008.getSlug())))
                 .andExpect(jsonPath("$.content[*].slug", hasItem(athleteStriker2010.getSlug())));
     }
+
+    @Test
+    void getDirectoryAndPublicProfile_SameClubScoutSeesUnverifiedUnsubscribedClubAthletes_OutsiderDoesNot() throws Exception {
+        long time = System.currentTimeMillis();
+
+        User sameClubScoutUser = User.builder()
+                .email("scout.sameclub." + time + "@scout.test")
+                .passwordHash(passwordEncoder.encode("Password123*"))
+                .fullName("Scout Mismo Club")
+                .phoneNumber("+584120000099")
+                .role(UserRole.SCOUT)
+                .status(AccountStatus.ACTIVE)
+                .build();
+        sameClubScoutUser = userRepository.save(sameClubScoutUser);
+        String sameClubScoutToken = jwtService.generateToken(sameClubScoutUser);
+
+        ScoutProfile sameClubScoutProfile = ScoutProfile.builder()
+                .user(sameClubScoutUser)
+                .organizationName(clubCaracas.getName())
+                .scoutRole("Scout Jefe")
+                .credentialsDocumentUrl("/uploads/credentials/cred-sameclub-" + time + ".pdf")
+                .verificationStatus(ScoutVerificationStatus.APPROVED)
+                .build();
+        scoutProfileRepository.save(sameClubScoutProfile);
+
+        // Atleta cargado por carga masiva en el mismo club: sin suscripción y con patria potestad PENDING_REVIEW
+        Athlete sameClubBulkAthlete = Athlete.builder()
+                .tutor(athleteStriker2010.getTutor())
+                .firstName("Juan")
+                .lastName("Perez Bulk " + time)
+                .birthDate(LocalDate.of(2013, 6, 15))
+                .primaryPosition("MEDIOCAMPISTA")
+                .preferredFoot("DERECHO")
+                .nationality("Venezuela")
+                .currentClub(clubCaracas)
+                .slug("juan-perez-bulk-" + time)
+                .isPublic(true)
+                .legalVerificationStatus(LegalVerificationStatus.PENDING_REVIEW)
+                .build();
+        sameClubBulkAthlete = athleteRepository.save(sameClubBulkAthlete);
+
+        // Atleta eliminado lógicamente del mismo club: NO debe mostrarse ni al scout del mismo club
+        Athlete deletedClubAthlete = Athlete.builder()
+                .tutor(athleteStriker2010.getTutor())
+                .firstName("Borrado")
+                .lastName("Club " + time)
+                .birthDate(LocalDate.of(2014, 2, 10))
+                .primaryPosition("PORTERO")
+                .preferredFoot("DERECHO")
+                .nationality("Venezuela")
+                .currentClub(clubCaracas)
+                .slug("borrado-club-" + time)
+                .isPublic(true)
+                .legalVerificationStatus(LegalVerificationStatus.PENDING_REVIEW)
+                .deletedAt(java.time.Instant.now())
+                .build();
+        deletedClubAthlete = athleteRepository.save(deletedClubAthlete);
+
+        // 1. Scout del mismo club SÍ ve al atleta sin suscripción ni verificación legal aprobada (y NO ve al borrado)
+        mockMvc.perform(get("/api/v1/scouts/directory")
+                        .header("Authorization", "Bearer " + sameClubScoutToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[*].slug", hasItem(sameClubBulkAthlete.getSlug())))
+                .andExpect(jsonPath("$.content[*].slug", not(hasItem(deletedClubAthlete.getSlug()))));
+
+        // 2. Filtros siguen respetándose (no rompen la precedencia AND/OR)
+        mockMvc.perform(get("/api/v1/scouts/directory")
+                        .param("primaryPosition", "MEDIOCAMPISTA")
+                        .header("Authorization", "Bearer " + sameClubScoutToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[*].slug", hasItem(sameClubBulkAthlete.getSlug())))
+                .andExpect(jsonPath("$.content[*].slug", not(hasItem(athleteStriker2010.getSlug()))));
+
+        // 3. Años disponibles incluyen el año del atleta del mismo club y no el del eliminado
+        mockMvc.perform(get("/api/v1/scouts/directory/birth-years")
+                        .header("Authorization", "Bearer " + sameClubScoutToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasItem(2013)))
+                .andExpect(jsonPath("$", not(hasItem(2014))));
+
+        // 4. Scout del mismo club SÍ puede abrir la ficha completa (/public/{slug}), el borrado da 404
+        mockMvc.perform(get("/api/v1/athletes/public/" + sameClubBulkAthlete.getSlug())
+                        .header("Authorization", "Bearer " + sameClubScoutToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.slug").value(sameClubBulkAthlete.getSlug()));
+
+        mockMvc.perform(get("/api/v1/athletes/public/" + deletedClubAthlete.getSlug())
+                        .header("Authorization", "Bearer " + sameClubScoutToken))
+                .andExpect(status().isNotFound());
+
+        // 5. Scout de otro club NO ve al atleta sin suscripción/sin verificación en el directorio ni en la ficha pública
+        mockMvc.perform(get("/api/v1/scouts/directory")
+                        .header("Authorization", "Bearer " + approvedScoutToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[*].slug", not(hasItem(sameClubBulkAthlete.getSlug()))));
+
+        mockMvc.perform(get("/api/v1/athletes/public/" + sameClubBulkAthlete.getSlug())
+                        .header("Authorization", "Bearer " + approvedScoutToken))
+                .andExpect(status().isNotFound());
+    }
 }

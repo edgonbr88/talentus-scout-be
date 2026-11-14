@@ -21,6 +21,10 @@ public final class AthleteSpecifications {
         return (root, query, cb) -> cb.isTrue(root.get("isPublic"));
     }
 
+    public static Specification<Athlete> notDeleted() {
+        return (root, query, cb) -> cb.isNull(root.get("deletedAt"));
+    }
+
     public static Specification<Athlete> withBirthYear(Integer birthYear) {
         if (birthYear == null) {
             return null;
