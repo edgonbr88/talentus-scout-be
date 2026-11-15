@@ -253,6 +253,7 @@ public class AuthController {
                 response.setScoutVerificationStatus(scout.getVerificationStatus());
                 response.setRejectionReason(scout.getRejectionReason());
                 response.setBulkImportEnabled(scout.isBulkImportEnabled());
+                response.setOrganizationName(scout.getOrganizationName());
             });
         }
 

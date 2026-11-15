@@ -28,6 +28,7 @@ public class UserProfileResponse {
     private String rejectionReason;
     private boolean isProfileCompleted;
     private boolean bulkImportEnabled;
+    private String organizationName;
     private String country;
     private String state;
     private String address;

@@ -283,7 +283,7 @@ public class AthleteCvPdfService {
         if (approvedBadges != null && !approvedBadges.isEmpty()) {
             for (AthleteBadge b : approvedBadges) {
                 String orgName = b.getOrganization() != null ? b.getOrganization().getName() : "Organización Oficial";
-                Paragraph p = new Paragraph("✔ " + resolveBadgeTitle(b.getBadgeType(), orgName), badgeFont);
+                Paragraph p = new Paragraph("✔ " + resolveBadgeTitle(b.getBadgeType(), orgName, b.getVerificationNotes()), badgeFont);
                 contentCell.addElement(p);
                 hasBadges = true;
             }
@@ -371,7 +371,7 @@ public class AthleteCvPdfService {
         document.add(footerTable);
     }
 
-    private String resolveBadgeTitle(BadgeType type, String orgName) {
+    private String resolveBadgeTitle(BadgeType type, String orgName, String verificationNotes) {
         if (type == null) return "Insignia Verificada";
         switch (type) {
             case FEDERATION_LICENSE:
@@ -382,6 +382,10 @@ public class AthleteCvPdfService {
                 return "Certificación Médica y Antropométrica Oficial";
             case SCOUT_ENDORSEMENT:
                 return "Respaldo y Validación de Scout Acreditado";
+            case SPORT_ACHIEVEMENT:
+                return (verificationNotes != null && !verificationNotes.isBlank())
+                        ? verificationNotes + " (" + orgName + ")"
+                        : "Logro Deportivo / Palmarés Avalado (" + orgName + ")";
             default:
                 return "Certificación Oficial Verificada";
         }
