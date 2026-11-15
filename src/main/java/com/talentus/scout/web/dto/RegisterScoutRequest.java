@@ -78,4 +78,8 @@ public class RegisterScoutRequest {
 
     @NotNull(message = "La fotografía selfie es obligatoria")
     private MultipartFile selfieFile;
+
+    @NotNull(message = "La aceptación de los términos y condiciones es obligatoria")
+    @jakarta.validation.constraints.AssertTrue(message = "Debe aceptar obligatoriamente los Términos y Condiciones para Scouts y la cláusula de difusión institucional")
+    private Boolean acceptTerms;
 }
