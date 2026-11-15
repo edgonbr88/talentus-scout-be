@@ -129,8 +129,8 @@ public class VideoService {
         User currentUser = userRepository.findByEmail(currentUserEmail)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado con email: " + currentUserEmail));
 
-        if (currentUser.getRole() != UserRole.TUTOR || athlete.getTutor() == null || !athlete.getTutor().getId().equals(currentUser.getId())) {
-            throw new AccessDeniedException("No tienes autorización para cargar videos de este atleta. Solo el tutor legal puede realizar esta acción.");
+        if ((currentUser.getRole() != UserRole.TUTOR && currentUser.getRole() != UserRole.ATHLETE) || athlete.getTutor() == null || !athlete.getTutor().getId().equals(currentUser.getId())) {
+            throw new AccessDeniedException("No tienes autorización para cargar videos de este atleta. Solo el tutor legal o el atleta titular pueden realizar esta acción.");
         }
 
         validateActiveSubscriptionForVideoUpload(athlete);
@@ -179,7 +179,7 @@ public class VideoService {
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado con email: " + currentUserEmail));
 
         Athlete athlete = video.getAthlete();
-        if (currentUser.getRole() != UserRole.TUTOR || athlete == null || athlete.getTutor() == null || !athlete.getTutor().getId().equals(currentUser.getId())) {
+        if ((currentUser.getRole() != UserRole.TUTOR && currentUser.getRole() != UserRole.ATHLETE) || athlete == null || athlete.getTutor() == null || !athlete.getTutor().getId().equals(currentUser.getId())) {
             throw new AccessDeniedException("No tienes autorización para confirmar videos de este atleta.");
         }
 

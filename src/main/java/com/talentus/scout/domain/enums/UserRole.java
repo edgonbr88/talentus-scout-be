@@ -4,5 +4,6 @@ public enum UserRole {
     TUTOR,
     SCOUT,
     VERIFIER_ORG,
-    ADMIN
+    ADMIN,
+    ATHLETE
 }

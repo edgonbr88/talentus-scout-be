@@ -56,6 +56,23 @@ public class ScoutProfile {
     private String linkedinUrl;
 
     @Builder.Default
+    @Column(name = "accepted_terms", nullable = false)
+    private boolean acceptedTerms = false;
+
+    @Builder.Default
+    @Column(name = "terms_version", nullable = false, length = 20)
+    private String termsVersion = "1.0";
+
+    @Column(name = "terms_accepted_at")
+    private Instant termsAcceptedAt;
+
+    @Column(name = "terms_ip_address", length = 45)
+    private String termsIpAddress;
+
+    @Column(name = "terms_user_agent", columnDefinition = "TEXT")
+    private String termsUserAgent;
+
+    @Builder.Default
     @Enumerated(EnumType.STRING)
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Column(name = "verification_status", columnDefinition = "scout_verification_status", nullable = false)

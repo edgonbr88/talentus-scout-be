@@ -23,6 +23,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -85,6 +86,8 @@ class AuthScoutRegistrationTest {
                         .file(credentialsFile)
                         .file(createIdDocumentFile())
                         .file(createSelfieFile())
+                        .header("CF-Connecting-IP", "190.200.10.5")
+                        .header("User-Agent", "TalentusScout-TestAgent/1.0")
                         .param("email", email)
                         .param("password", "Password123*")
                         .param("fullName", "Mateo Falcon")
@@ -93,7 +96,8 @@ class AuthScoutRegistrationTest {
                         .param("scoutRole", "Reclutador Internacional")
                         .param("idDocumentType", "V")
                         .param("idDocumentNumber", "12345678")
-                        .param("linkedinUrl", "https://linkedin.com/in/mateo-falcon"))
+                        .param("linkedinUrl", "https://linkedin.com/in/mateo-falcon")
+                        .param("acceptTerms", "true"))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.token").isNotEmpty())
                 .andExpect(jsonPath("$.email").value(email))
@@ -122,6 +126,11 @@ class AuthScoutRegistrationTest {
         assertTrue(profile.getCredentialsDocumentUrl().contains("/uploads/credentials/"));
         assertTrue(profile.getIdDocumentUrl().contains("/uploads/identity-documents/scouts/"));
         assertTrue(profile.getSelfieUrl().contains("/uploads/selfies/scouts/"));
+        assertTrue(profile.isAcceptedTerms());
+        assertEquals("1.0", profile.getTermsVersion());
+        assertNotNull(profile.getTermsAcceptedAt());
+        assertEquals("190.200.10.5", profile.getTermsIpAddress());
+        assertEquals("TalentusScout-TestAgent/1.0", profile.getTermsUserAgent());
     }
 
     @Test
@@ -147,7 +156,8 @@ class AuthScoutRegistrationTest {
                         .param("organizationName", "Academia Rayo Vallecano")
                         .param("scoutRole", "Reclutador Internacional")
                         .param("idDocumentType", "V")
-                        .param("idDocumentNumber", "12345678"))
+                        .param("idDocumentNumber", "12345678")
+                        .param("acceptTerms", "true"))
                 .andExpect(status().isCreated());
 
         // Segundo registro con el mismo email -> Conflict
@@ -162,7 +172,8 @@ class AuthScoutRegistrationTest {
                         .param("organizationName", "Academia Rayo Vallecano")
                         .param("scoutRole", "Reclutador Internacional")
                         .param("idDocumentType", "V")
-                        .param("idDocumentNumber", "12345678"))
+                        .param("idDocumentNumber", "12345678")
+                        .param("acceptTerms", "true"))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.error").value("CONFLICT"))
                 .andExpect(jsonPath("$.message").isNotEmpty());
@@ -235,7 +246,8 @@ class AuthScoutRegistrationTest {
                         .param("organizationClubId", club.getId().toString())
                         .param("scoutRole", "Ojeador Juvenil")
                         .param("idDocumentType", "V")
-                        .param("idDocumentNumber", "12345678"))
+                        .param("idDocumentNumber", "12345678")
+                        .param("acceptTerms", "true"))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.organizationName").value(club.getName()));
 
@@ -266,7 +278,8 @@ class AuthScoutRegistrationTest {
                         .param("customClubCountry", "Venezuela")
                         .param("scoutRole", "Director Deportivo")
                         .param("idDocumentType", "V")
-                        .param("idDocumentNumber", "12345678"))
+                        .param("idDocumentNumber", "12345678")
+                        .param("acceptTerms", "true"))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.organizationName").value(customName));
 
@@ -294,7 +307,8 @@ class AuthScoutRegistrationTest {
                         .param("organizationName", "Agente Independiente")
                         .param("scoutRole", "Agente FIFA")
                         .param("idDocumentType", "V")
-                        .param("idDocumentNumber", "12345678"))
+                        .param("idDocumentNumber", "12345678")
+                        .param("acceptTerms", "true"))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.organizationName").value("Agente Independiente"));
 
@@ -303,5 +317,32 @@ class AuthScoutRegistrationTest {
         Optional<ScoutProfile> profileOpt = scoutProfileRepository.findByUserId(userOpt.get().getId());
         assertTrue(profileOpt.isPresent());
         assertEquals("Agente Independiente", profileOpt.get().getOrganizationName());
+    }
+
+    @Test
+    void registerScout_WithoutAcceptedTerms_Returns400BadRequest() throws Exception {
+        String email = "scout.noterms." + System.currentTimeMillis() + "@test.com";
+        MockMultipartFile credentialsFile = new MockMultipartFile(
+                "credentialsFile",
+                "credencial.pdf",
+                "application/pdf",
+                "PDF".getBytes()
+        );
+
+        mockMvc.perform(multipart("/api/v1/auth/register-scout")
+                        .file(credentialsFile)
+                        .file(createIdDocumentFile())
+                        .file(createSelfieFile())
+                        .param("email", email)
+                        .param("password", "Password123*")
+                        .param("fullName", "Scout Sin Terminos")
+                        .param("phoneNumber", "+584121234567")
+                        .param("organizationName", "Club Prueba")
+                        .param("scoutRole", "Scout")
+                        .param("idDocumentType", "V")
+                        .param("idDocumentNumber", "12345678")
+                        .param("acceptTerms", "false"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("BAD_REQUEST"));
     }
 }

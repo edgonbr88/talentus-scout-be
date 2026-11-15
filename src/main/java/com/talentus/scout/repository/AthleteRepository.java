@@ -15,6 +15,7 @@ import java.util.UUID;
 
 @Repository
 public interface AthleteRepository extends JpaRepository<Athlete, UUID>, JpaSpecificationExecutor<Athlete> {
+    List<Athlete> findByTutorId(UUID tutorId);
     List<Athlete> findByTutorIdOrderByCreatedAtDesc(UUID tutorId);
     List<Athlete> findByTutorIdAndDeletedAtIsNull(UUID tutorId);
     Optional<Athlete> findBySlug(String slug);
