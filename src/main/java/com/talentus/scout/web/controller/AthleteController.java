@@ -91,8 +91,11 @@ public class AthleteController {
     }
 
     @GetMapping("/public/{slug}")
-    public ResponseEntity<PublicAthleteResponse> getPublicAthleteBySlug(@PathVariable("slug") String slug) {
-        PublicAthleteResponse response = athleteService.getPublicAthleteBySlug(slug);
+    public ResponseEntity<PublicAthleteResponse> getPublicAthleteBySlug(
+            @PathVariable("slug") String slug,
+            Authentication authentication
+    ) {
+        PublicAthleteResponse response = athleteService.getPublicAthleteBySlug(slug, authentication);
         return ResponseEntity.ok(response);
     }
 

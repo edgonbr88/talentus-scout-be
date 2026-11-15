@@ -363,6 +363,44 @@ public class EmailService {
         return dispatchEmail(toEmail, subject, htmlBody, mockDetails);
     }
 
+    public boolean sendTutorBulkImportInvite(String toEmail, String tutorName, String athleteNames, String clubName, String activationLink, String rejectLink) {
+        String subject = "Registro de Atleta por " + (clubName != null ? clubName : "tu Club Deportivo") + " — Talentus Scout";
+        String htmlBody = String.format("""
+                <div style='font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0A0F1D; color: #F8FAFC; padding: 32px 24px; border-radius: 12px; max-width: 600px; margin: 0 auto; border: 1px solid rgba(255, 255, 255, 0.08);'>
+                  <div style='text-align: center; margin-bottom: 24px;'>
+                    <img src='%s' alt='Talentus Scout' style='max-height: 48px; display: inline-block;' />
+                  </div>
+                  <h2 style='color: #10B981; font-size: 20px; font-weight: 700; margin-top: 0; margin-bottom: 16px;'>¡Bienvenido a Talentus Scout!</h2>
+                  <p style='color: #E2E8F0; font-size: 15px; line-height: 1.6; margin-bottom: 16px;'>Estimado(a) %s,</p>
+                  <p style='color: #CBD5E1; font-size: 14px; line-height: 1.6; margin-bottom: 16px;'>
+                    La organización deportiva <strong>%s</strong> ha precargado a tu(s) representado(s) (<strong>%s</strong>) en la plataforma Talentus Scout para su seguimiento y visibilidad deportiva.
+                  </p>
+                  <p style='color: #CBD5E1; font-size: 14px; line-height: 1.6; margin-bottom: 24px;'>
+                    Para activar tu cuenta de tutor legal, establecer tu contraseña y completar la información requerida por la normativa LOPNNA (fotos, documentación y consentimiento), ingresa mediante el siguiente enlace:
+                  </p>
+                  <div style='text-align: center; margin: 28px 0;'>
+                    <a href='%s' style='background: #10B981; color: #0A0F1D; font-weight: 700; font-size: 15px; padding: 14px 28px; border-radius: 8px; text-decoration: none; display: inline-block; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);'>
+                      Activar mi Cuenta y Completar Perfil
+                    </a>
+                  </div>
+                  <p style='color: #94A3B8; font-size: 13px; line-height: 1.5; margin-bottom: 16px;'>
+                    También puedes iniciar sesión directamente con tu cuenta de Google utilizando este mismo correo (%s).
+                  </p>
+                  <div style='border-top: 1px solid rgba(255, 255, 255, 0.08); padding-top: 16px; margin-top: 24px;'>
+                    <p style='color: #EF4444; font-size: 12px; margin-bottom: 8px;'>¿No reconoces esta vinculación o deseas rechazar el registro?</p>
+                    <a href='%s' style='color: #F87171; font-size: 12px; text-decoration: underline;'>Rechazar registro y eliminar datos del representado</a>
+                  </div>
+                </div>
+              """, brandingLogoUrl, tutorName != null ? tutorName : "Representante Legal",
+                   clubName != null ? clubName : "tu Club",
+                   athleteNames != null ? athleteNames : "tu Atleta",
+                   activationLink, toEmail, rejectLink);
+
+        String mockDetails = String.format("Tutor: %s\nAtleta(s): %s\nClub: %s\nActivación: %s\nRechazo: %s",
+                tutorName, athleteNames, clubName, activationLink, rejectLink);
+        return dispatchEmail(toEmail, subject, htmlBody, mockDetails);
+    }
+
     private String renderTemplate(String template, Map<String, String> values) {
         String result = template;
         for (Map.Entry<String, String> entry : values.entrySet()) {

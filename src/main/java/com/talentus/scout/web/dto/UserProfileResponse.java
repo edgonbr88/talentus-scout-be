@@ -27,6 +27,7 @@ public class UserProfileResponse {
     private ScoutVerificationStatus scoutVerificationStatus;
     private String rejectionReason;
     private boolean isProfileCompleted;
+    private boolean bulkImportEnabled;
     private String country;
     private String state;
     private String address;

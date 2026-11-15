@@ -43,7 +43,7 @@ talentus:
     base-url: ${FRONTEND_BASE_URL:http://localhost}
     certify-url: ${FRONTEND_CERTIFY_URL:http://localhost/certify}
   mail:
-    enabled: ${MAIL_ENABLED:true}
+    enabled: ${MAIL_ENABLED:false}
     from: ${MAIL_FROM:contacto@talentusscout.com}
     api-key: ${RESEND_API_KEY:}
     branding:

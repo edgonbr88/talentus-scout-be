@@ -71,6 +71,9 @@ public class User {
     @Column(name = "address", length = 255)
     private String address;
 
+    @Column(name = "deleted_at")
+    private Instant deletedAt;
+
     public User(String email, String passwordHash, String fullName, String phoneNumber, UserRole role, AccountStatus status) {
         this.email = email;
         this.passwordHash = passwordHash;

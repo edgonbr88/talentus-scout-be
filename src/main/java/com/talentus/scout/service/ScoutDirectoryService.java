@@ -7,6 +7,7 @@ import com.talentus.scout.domain.enums.VideoStatus;
 import com.talentus.scout.repository.AthleteBadgeRepository;
 import com.talentus.scout.repository.AthleteRepository;
 import com.talentus.scout.repository.AthleteVideoRepository;
+import com.talentus.scout.security.ScoutSecurity;
 import com.talentus.scout.specification.AthleteSpecifications;
 import com.talentus.scout.web.dto.AthleteFilterCriteria;
 import com.talentus.scout.web.dto.ScoutDirectoryAthleteItem;
@@ -15,10 +16,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -28,19 +32,44 @@ public class ScoutDirectoryService {
     private final AthleteRepository athleteRepository;
     private final AthleteBadgeRepository athleteBadgeRepository;
     private final AthleteVideoRepository athleteVideoRepository;
+    private final ScoutSecurity scoutSecurity;
 
     @Transactional(readOnly = true)
     public List<Integer> getAvailableBirthYears() {
-        return athleteRepository.findDistinctBirthYearsWithActiveRadar();
+        return getAvailableBirthYears(null);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Integer> getAvailableBirthYears(Authentication authentication) {
+        return scoutSecurity.resolveApprovedScoutClubId(authentication)
+                .map(athleteRepository::findDistinctBirthYearsForDirectoryWithClub)
+                .orElseGet(athleteRepository::findDistinctBirthYearsWithActiveRadar);
     }
 
     @Transactional(readOnly = true)
     public Page<ScoutDirectoryAthleteItem> searchDirectory(AthleteFilterCriteria criteria, Pageable pageable) {
+        return searchDirectory(criteria, pageable, null);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<ScoutDirectoryAthleteItem> searchDirectory(
+            AthleteFilterCriteria criteria,
+            Pageable pageable,
+            Authentication authentication
+    ) {
         log.debug("Ejecutando búsqueda en directorio de scouts con criterios: {}", criteria);
 
-        Specification<Athlete> spec = Specification.where(AthleteSpecifications.isPublic())
+        Specification<Athlete> publicRadarSpec = Specification.where(AthleteSpecifications.isPublic())
+                .and(AthleteSpecifications.notDeleted())
                 .and(AthleteSpecifications.hasActiveSubscription())
                 .and(AthleteSpecifications.hasLegalVerificationApproved());
+
+        Optional<UUID> scoutClubIdOpt = scoutSecurity.resolveApprovedScoutClubId(authentication);
+        Specification<Athlete> spec = scoutClubIdOpt
+                .map(clubId -> Specification.where(publicRadarSpec)
+                        .or(Specification.where(AthleteSpecifications.notDeleted())
+                                .and(AthleteSpecifications.withClubId(clubId))))
+                .orElse(publicRadarSpec);
 
         if (criteria != null) {
             if (criteria.getBirthYearFrom() != null || criteria.getBirthYearTo() != null) {

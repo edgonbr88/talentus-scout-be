@@ -14,10 +14,12 @@ import com.talentus.scout.repository.AthleteBadgeRepository;
 import com.talentus.scout.repository.AthleteRepository;
 import com.talentus.scout.repository.AthleteVideoRepository;
 import com.talentus.scout.repository.UserRepository;
+import com.talentus.scout.security.ScoutSecurity;
 import com.talentus.scout.web.dto.AthleteResponse;
 import com.talentus.scout.web.dto.CreateAthleteRequest;
 import com.talentus.scout.web.dto.UpdateAthleteRequest;
 import com.talentus.scout.web.dto.publicprofile.*;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -43,6 +45,7 @@ public class AthleteService {
     private final com.talentus.scout.repository.PaymentTransactionRepository paymentTransactionRepository;
     private final com.talentus.scout.service.storage.FileStorageService fileStorageService;
     private final AdminNotificationService adminNotificationService;
+    private final ScoutSecurity scoutSecurity;
 
     public AthleteService(
             AthleteRepository athleteRepository,
@@ -54,7 +57,8 @@ public class AthleteService {
             com.talentus.scout.repository.AthleteSubscriptionRepository athleteSubscriptionRepository,
             com.talentus.scout.repository.PaymentTransactionRepository paymentTransactionRepository,
             com.talentus.scout.service.storage.FileStorageService fileStorageService,
-            AdminNotificationService adminNotificationService
+            AdminNotificationService adminNotificationService,
+            ScoutSecurity scoutSecurity
     ) {
         this.athleteRepository = athleteRepository;
         this.userRepository = userRepository;
@@ -66,6 +70,7 @@ public class AthleteService {
         this.paymentTransactionRepository = paymentTransactionRepository;
         this.fileStorageService = fileStorageService;
         this.adminNotificationService = adminNotificationService;
+        this.scoutSecurity = scoutSecurity;
     }
 
     @Transactional
@@ -263,10 +268,21 @@ public class AthleteService {
 
     @Transactional(readOnly = true)
     public PublicAthleteResponse getPublicAthleteBySlug(String slug) {
+        return getPublicAthleteBySlug(slug, null);
+    }
+
+    @Transactional(readOnly = true)
+    public PublicAthleteResponse getPublicAthleteBySlug(String slug, Authentication authentication) {
         Athlete athlete = athleteRepository.findBySlug(slug)
                 .orElseThrow(() -> new ResourceNotFoundException("Perfil público de atleta no encontrado: " + slug));
 
-        if (!athlete.isPublic() || athlete.getLegalVerificationStatus() != LegalVerificationStatus.APPROVED) {
+        if (athlete.getDeletedAt() != null) {
+            throw new ResourceNotFoundException("Perfil público de atleta no encontrado: " + slug);
+        }
+
+        boolean isPublicApproved = athlete.isPublic()
+                && athlete.getLegalVerificationStatus() == LegalVerificationStatus.APPROVED;
+        if (!isPublicApproved && !canViewRestrictedProfile(athlete, authentication)) {
             throw new ResourceNotFoundException("El perfil del atleta no se encuentra público o requiere verificación de patria potestad.");
         }
 
@@ -448,6 +464,26 @@ public class AthleteService {
         }
 
         return new AthleteResponse(athlete);
+    }
+
+    private boolean canViewRestrictedProfile(Athlete athlete, Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return false;
+        }
+        if (scoutSecurity.hasRole(authentication, "ADMIN")) {
+            return true;
+        }
+        if (athlete.getTutor() != null && athlete.getTutor().getEmail() != null
+                && athlete.getTutor().getEmail().equalsIgnoreCase(authentication.getName())) {
+            return true;
+        }
+        if (athlete.getCurrentClub() == null || athlete.getCurrentClub().getId() == null) {
+            return false;
+        }
+        UUID athleteClubId = athlete.getCurrentClub().getId();
+        return scoutSecurity.resolveApprovedScoutClubId(authentication)
+                .map(scoutClubId -> scoutClubId.equals(athleteClubId))
+                .orElse(false);
     }
 
     private AthleteResponse enrichAthleteResponse(AthleteResponse response) {

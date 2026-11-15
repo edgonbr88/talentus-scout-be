@@ -116,6 +116,9 @@ public class Athlete {
     @Column(name = "updated_at")
     private Instant updatedAt;
 
+    @Column(name = "deleted_at")
+    private Instant deletedAt;
+
     @PrePersist
     protected void onCreate() {
         if (createdAt == null) {
