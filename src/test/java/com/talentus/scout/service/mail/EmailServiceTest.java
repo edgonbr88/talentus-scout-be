@@ -35,22 +35,37 @@ class EmailServiceTest {
         ReflectionTestUtils.setField(emailService, "mailEnabled", false);
         ReflectionTestUtils.setField(emailService, "mailFrom", "contacto@talentusscout.com");
         ReflectionTestUtils.setField(emailService, "apiKey", "");
-        ReflectionTestUtils.setField(emailService, "brandingLogoUrl", "https://i.imgur.com/9j8oQ2B.png");
+        ReflectionTestUtils.setField(emailService, "brandingLogoUrl", "https://talentusscout.com/assets/branding/ts-imagotipo-dark-email.png");
         ReflectionTestUtils.setField(emailService, "frontendBaseUrl", "https://talentusscout.com");
         emailService.init();
     }
 
     @Test
-    @DisplayName("Debe cargar plantillas de correo y contener la URL oficial del logo")
-    void testTemplatesContainOfficialLogo() {
+    @DisplayName("Debe cargar plantillas de correo y contener la variable dinámica ##LOGO_URL## sin logo obsoleto ni H1 redundante")
+    void testTemplatesContainDynamicLogoPlaceholder() {
         String verificationTemplate = (String) ReflectionTestUtils.getField(emailService, "emailVerificationTemplate");
         String inviteTemplate = (String) ReflectionTestUtils.getField(emailService, "certificationInviteTemplate");
 
         assertThat(verificationTemplate).isNotNull();
-        assertThat(verificationTemplate).contains("https://i.imgur.com/9j8oQ2B.png");
+        assertThat(verificationTemplate).contains("##LOGO_URL##");
+        assertThat(verificationTemplate).doesNotContain("https://i.imgur.com/9j8oQ2B.png");
+        assertThat(verificationTemplate).doesNotContain("<h1 class=\"brand-title\">TALENTUS <span>SCOUT</span></h1>");
+        assertThat(verificationTemplate).contains("height=\"110\"");
 
         assertThat(inviteTemplate).isNotNull();
-        assertThat(inviteTemplate).contains("https://i.imgur.com/9j8oQ2B.png");
+        assertThat(inviteTemplate).contains("##LOGO_URL##");
+        assertThat(inviteTemplate).doesNotContain("https://i.imgur.com/9j8oQ2B.png");
+        assertThat(inviteTemplate).doesNotContain("<h1 class=\"brand-title\">TALENTUS <span>SCOUT</span></h1>");
+        assertThat(inviteTemplate).contains("height=\"110\"");
+    }
+
+    @Test
+    @DisplayName("buildLogoHeaderHtml genera cabecera con nuevo logo y dimensiones optimizadas de 110px")
+    void testBuildLogoHeaderHtml() {
+        String headerHtml = emailService.buildLogoHeaderHtml();
+        assertThat(headerHtml).contains("https://talentusscout.com/assets/branding/ts-imagotipo-dark-email.png");
+        assertThat(headerHtml).contains("height='110'");
+        assertThat(headerHtml).contains("max-height: 120px;");
     }
 
     @Test
@@ -119,7 +134,7 @@ class EmailServiceTest {
     }
 
     @Test
-    @DisplayName("Debe despachar correo real exitosamente vía Resend cuando mailEnabled=true y apiKey presente")
+    @DisplayName("Debe despachar correo real exitosamente vía Resend cuando mailEnabled=true y reemplazar ##LOGO_URL## por la URL oficial")
     void testDispatchEmailRealSuccess() throws Exception {
         ReflectionTestUtils.setField(emailService, "mailEnabled", true);
         ReflectionTestUtils.setField(emailService, "apiKey", "re_test_key_12345");
@@ -127,13 +142,48 @@ class EmailServiceTest {
         CreateEmailResponse mockResponse = mock(CreateEmailResponse.class);
         when(mockResponse.getId()).thenReturn("resend_msg_test_abc123");
         when(resend.emails()).thenReturn(emails);
-        when(emails.send(any(CreateEmailOptions.class))).thenReturn(mockResponse);
+        ArgumentCaptor<CreateEmailOptions> captor = ArgumentCaptor.forClass(CreateEmailOptions.class);
+        when(emails.send(captor.capture())).thenReturn(mockResponse);
 
         boolean sent = emailService.sendEmailVerification("destinatario@real.com", "Tutor Real", "https://talentusscout.com/verify?token=xyz");
 
         assertThat(sent).isTrue();
         verify(resend, times(1)).emails();
         verify(emails, times(1)).send(any(CreateEmailOptions.class));
+
+        String renderedHtml = captor.getValue().getHtml();
+        assertThat(renderedHtml).contains("https://talentusscout.com/assets/branding/ts-imagotipo-dark-email.png");
+        assertThat(renderedHtml).doesNotContain("##LOGO_URL##");
+        assertThat(renderedHtml).doesNotContain("9j8oQ2B.png");
+        assertThat(renderedHtml).doesNotContain("<h1 class=\"brand-title\">");
+        assertThat(renderedHtml).contains("height=\"110\"");
+    }
+
+    @Test
+    @DisplayName("sendCertificationInvite debe despachar plantilla con el nuevo logo y sin tags redundantes")
+    void testSendCertificationInviteRealSuccess() throws Exception {
+        ReflectionTestUtils.setField(emailService, "mailEnabled", true);
+        ReflectionTestUtils.setField(emailService, "apiKey", "re_test_key_12345");
+
+        CreateEmailResponse mockResponse = mock(CreateEmailResponse.class);
+        when(mockResponse.getId()).thenReturn("resend_msg_invite_123");
+        when(resend.emails()).thenReturn(emails);
+        ArgumentCaptor<CreateEmailOptions> captor = ArgumentCaptor.forClass(CreateEmailOptions.class);
+        when(emails.send(captor.capture())).thenReturn(mockResponse);
+
+        boolean sent = emailService.sendCertificationInvite(
+                "coach@club.com", "Entrenador Luis", "Juan Perez",
+                "Carlos Perez", "Acreditación Física", "Ficha Médica y Antropométrica",
+                "https://talentusscout.com/certify/token-abc", 7
+        );
+
+        assertThat(sent).isTrue();
+        String renderedHtml = captor.getValue().getHtml();
+        assertThat(renderedHtml).contains("https://talentusscout.com/assets/branding/ts-imagotipo-dark-email.png");
+        assertThat(renderedHtml).doesNotContain("##LOGO_URL##");
+        assertThat(renderedHtml).doesNotContain("9j8oQ2B.png");
+        assertThat(renderedHtml).doesNotContain("<h1 class=\"brand-title\">");
+        assertThat(renderedHtml).contains("height=\"110\"");
     }
 
     @Test
@@ -172,6 +222,8 @@ class EmailServiceTest {
         String htmlApproved = captor.getValue().getHtml();
 
         assertThat(htmlApproved).contains("href='https://talentusscout.com/scout/directory'");
+        assertThat(htmlApproved).contains("height='110'");
+        assertThat(htmlApproved).contains("https://talentusscout.com/assets/branding/ts-imagotipo-dark-email.png");
         assertThat(htmlApproved).doesNotContain("talentus.app");
 
         // Caso 2: Rechazado / Subsanación -> /login

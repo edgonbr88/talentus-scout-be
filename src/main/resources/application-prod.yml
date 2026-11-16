@@ -67,4 +67,4 @@ talentus:
     from: ${MAIL_FROM:contacto@talentusscout.com}
     api-key: ${RESEND_API_KEY:}
     branding:
-      logo-url: ${TALENTUS_MAIL_LOGO_URL:https://i.imgur.com/9j8oQ2B.png}
+      logo-url: ${TALENTUS_MAIL_LOGO_URL:https://talentusscout.com/assets/branding/ts-imagotipo-dark-email.png}
