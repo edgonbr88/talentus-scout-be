@@ -6,14 +6,21 @@ import com.talentus.scout.domain.enums.ScoutVerificationStatus;
 import com.talentus.scout.exception.ResourceNotFoundException;
 import com.talentus.scout.repository.ScoutProfileRepository;
 import com.talentus.scout.repository.UserRepository;
+import com.talentus.scout.service.ScoutAchievementService;
 import com.talentus.scout.service.storage.FileStorageService;
+import com.talentus.scout.web.dto.CreateAthleteAchievementRequest;
+import com.talentus.scout.web.dto.publicprofile.PublicBadgeDto;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -21,6 +28,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/scout")
@@ -31,6 +39,7 @@ public class ScoutProfileController {
     private final UserRepository userRepository;
     private final ScoutProfileRepository scoutProfileRepository;
     private final FileStorageService fileStorageService;
+    private final ScoutAchievementService scoutAchievementService;
 
     private static final List<String> ALLOWED_EXTENSIONS = List.of(".pdf", ".png", ".jpg", ".jpeg");
     private static final long MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
@@ -79,5 +88,16 @@ public class ScoutProfileController {
                 "verificationStatus", "PENDING",
                 "credentialsDocumentUrl", credentialsUrl
         ));
+    }
+
+    @PostMapping("/athletes/{athleteId}/achievements")
+    @PreAuthorize("hasAnyRole('SCOUT', 'ADMIN')")
+    public ResponseEntity<PublicBadgeDto> registerAthleteAchievement(
+            @PathVariable UUID athleteId,
+            @Valid @RequestBody CreateAthleteAchievementRequest request,
+            Authentication authentication
+    ) {
+        PublicBadgeDto createdBadge = scoutAchievementService.registerClubAchievement(athleteId, request, authentication);
+        return ResponseEntity.status(HttpStatus.CREATED).body(createdBadge);
     }
 }
