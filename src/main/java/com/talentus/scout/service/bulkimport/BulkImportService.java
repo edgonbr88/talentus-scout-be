@@ -58,12 +58,15 @@ public class BulkImportService {
                 .orElseThrow(() -> new IllegalArgumentException("Usuario scout no encontrado"));
 
         Optional<ScoutProfile> optProfile = scoutProfileRepository.findByUserId(scoutUserId);
-        if (scoutUser.getRole() != com.talentus.scout.domain.enums.UserRole.ADMIN) {
-            if (optProfile.isEmpty() || !optProfile.get().isBulkImportEnabled()) {
-                throw new org.springframework.security.access.AccessDeniedException(
-                        "Tu perfil de scout no tiene habilitada la funcionalidad de carga masiva. Contacta al administrador."
-                );
-            }
+        if (scoutUser.getRole() == com.talentus.scout.domain.enums.UserRole.ADMIN) {
+            throw new org.springframework.security.access.AccessDeniedException(
+                    "El rol Administrador no tiene permitido realizar operaciones de carga masiva de atletas."
+            );
+        }
+        if (optProfile.isEmpty() || !optProfile.get().isBulkImportEnabled()) {
+            throw new org.springframework.security.access.AccessDeniedException(
+                    "Tu perfil de scout no tiene habilitada la funcionalidad de carga masiva. Contacta al administrador."
+            );
         }
         String orgName = optProfile.map(ScoutProfile::getOrganizationName).orElse("Organización Deportiva");
         ClubOrganization club = null;
@@ -113,12 +116,15 @@ public class BulkImportService {
                 .orElseThrow(() -> new IllegalArgumentException("Usuario scout no encontrado"));
 
         Optional<ScoutProfile> optProfile = scoutProfileRepository.findByUserId(scoutUserId);
-        if (scoutUser.getRole() != com.talentus.scout.domain.enums.UserRole.ADMIN) {
-            if (optProfile.isEmpty() || !optProfile.get().isBulkImportEnabled()) {
-                throw new org.springframework.security.access.AccessDeniedException(
-                        "Tu perfil de scout no tiene habilitada la funcionalidad de carga masiva. Contacta al administrador."
-                );
-            }
+        if (scoutUser.getRole() == com.talentus.scout.domain.enums.UserRole.ADMIN) {
+            throw new org.springframework.security.access.AccessDeniedException(
+                    "El rol Administrador no tiene permitido realizar operaciones de carga masiva de atletas."
+            );
+        }
+        if (optProfile.isEmpty() || !optProfile.get().isBulkImportEnabled()) {
+            throw new org.springframework.security.access.AccessDeniedException(
+                    "Tu perfil de scout no tiene habilitada la funcionalidad de carga masiva. Contacta al administrador."
+            );
         }
         String orgName = optProfile.map(ScoutProfile::getOrganizationName).orElse("Organización Deportiva");
         ClubOrganization club = null;
