@@ -30,7 +30,7 @@ public class EmailService {
     @Value("${talentus.mail.api-key:}")
     private String apiKey;
 
-    @Value("${talentus.mail.branding.logo-url:https://i.imgur.com/9j8oQ2B.png}")
+    @Value("${talentus.mail.branding.logo-url:https://talentusscout.com/assets/branding/ts-imagotipo-dark-email.png}")
     private String brandingLogoUrl;
 
     @Value("${talentus.frontend.base-url:https://talentusscout.com}")
@@ -114,8 +114,17 @@ public class EmailService {
         return brandingLogoUrl;
     }
 
+    public String buildLogoHeaderHtml() {
+        return String.format("""
+                <div style='text-align: center; margin-bottom: 24px;'>
+                  <img src='%s' alt='Talentus Scout' height='110' style='height: 110px; max-height: 120px; width: auto; max-width: 100%%; display: block; margin: 0 auto; border: 0;' />
+                </div>
+                """, brandingLogoUrl);
+    }
+
     public boolean sendEmailVerification(String toEmail, String recipientName, String verificationLink) {
         Map<String, String> placeholders = Map.of(
+                "LOGO_URL", brandingLogoUrl,
                 "RECIPIENT_NAME", recipientName != null ? recipientName : "Representante Legal",
                 "VERIFICATION_LINK", verificationLink,
                 "EXPIRATION_HOURS", "24"
@@ -132,6 +141,7 @@ public class EmailService {
                                           String tutorName, String badgeTypeLabel, String badgeTitle,
                                           String certificationLink, int expirationDays) {
         Map<String, String> placeholders = Map.of(
+                "LOGO_URL", brandingLogoUrl,
                 "RECIPIENT_NAME", recipientName != null ? recipientName : "Estimado(a) Certificador(a)",
                 "ATHLETE_NAME", athleteName,
                 "TUTOR_NAME", tutorName != null ? tutorName : "Representante Legal",
@@ -157,8 +167,8 @@ public class EmailService {
         String htmlBody = approved
                 ? String.format("""
                     <div style='font-family: sans-serif; background: #0A0F1D; color: #F8FAFC; padding: 24px; border-radius: 12px;'>
-                      <div style='text-align: center; margin-bottom: 20px;'>
-                        <img src='%s' alt='Talentus Scout' style='max-height: 44px; display: inline-block;' />
+                      <div style='text-align: center; margin-bottom: 24px;'>
+                        <img src='%s' alt='Talentus Scout' height='110' style='height: 110px; max-height: 120px; width: auto; max-width: 100%%; display: block; margin: 0 auto; border: 0;' />
                       </div>
                       <h2 style='color: #10B981;'>¡Pago Confirmado y Suscripción Activada!</h2>
                       <p>Hola %s,</p>
@@ -168,8 +178,8 @@ public class EmailService {
                   """, brandingLogoUrl, tutorName, planName, athleteName)
                 : String.format("""
                     <div style='font-family: sans-serif; background: #0A0F1D; color: #F8FAFC; padding: 24px; border-radius: 12px;'>
-                      <div style='text-align: center; margin-bottom: 20px;'>
-                        <img src='%s' alt='Talentus Scout' style='max-height: 44px; display: inline-block;' />
+                      <div style='text-align: center; margin-bottom: 24px;'>
+                        <img src='%s' alt='Talentus Scout' height='110' style='height: 110px; max-height: 120px; width: auto; max-width: 100%%; display: block; margin: 0 auto; border: 0;' />
                       </div>
                       <h2 style='color: #EF4444;'>Observación en tu Reporte de Pago</h2>
                       <p>Hola %s,</p>
@@ -193,8 +203,8 @@ public class EmailService {
         String htmlBody = approved
                 ? String.format("""
                     <div style='font-family: sans-serif; background: #0A0F1D; color: #F8FAFC; padding: 24px; border-radius: 12px;'>
-                      <div style='text-align: center; margin-bottom: 20px;'>
-                        <img src='%s' alt='Talentus Scout' style='max-height: 44px; display: inline-block;' />
+                      <div style='text-align: center; margin-bottom: 24px;'>
+                        <img src='%s' alt='Talentus Scout' height='110' style='height: 110px; max-height: 120px; width: auto; max-width: 100%%; display: block; margin: 0 auto; border: 0;' />
                       </div>
                       <h2 style='color: #10B981;'>¡Patria Potestad Auditada y Aprobada!</h2>
                       <p>Hola %s,</p>
@@ -207,8 +217,8 @@ public class EmailService {
                   """, brandingLogoUrl, tutorName != null ? tutorName : "Representante Legal", athleteName, getBaseUrl())
                 : String.format("""
                     <div style='font-family: sans-serif; background: #0A0F1D; color: #F8FAFC; padding: 24px; border-radius: 12px;'>
-                      <div style='text-align: center; margin-bottom: 20px;'>
-                        <img src='%s' alt='Talentus Scout' style='max-height: 44px; display: inline-block;' />
+                      <div style='text-align: center; margin-bottom: 24px;'>
+                        <img src='%s' alt='Talentus Scout' height='110' style='height: 110px; max-height: 120px; width: auto; max-width: 100%%; display: block; margin: 0 auto; border: 0;' />
                       </div>
                       <h2 style='color: #EF4444;'>Observación en la Documentación de Patria Potestad</h2>
                       <p>Hola %s,</p>
@@ -235,8 +245,8 @@ public class EmailService {
         String htmlBody = approved
                 ? String.format("""
                     <div style='font-family: sans-serif; background: #0A0F1D; color: #F8FAFC; padding: 24px; border-radius: 12px;'>
-                      <div style='text-align: center; margin-bottom: 20px;'>
-                        <img src='%s' alt='Talentus Scout' style='max-height: 44px; display: inline-block;' />
+                      <div style='text-align: center; margin-bottom: 24px;'>
+                        <img src='%s' alt='Talentus Scout' height='110' style='height: 110px; max-height: 120px; width: auto; max-width: 100%%; display: block; margin: 0 auto; border: 0;' />
                       </div>
                       <h2 style='color: #10B981;'>¡Acreditación Oficial Aprobada!</h2>
                       <p>Hola %s,</p>
@@ -249,8 +259,8 @@ public class EmailService {
                   """, brandingLogoUrl, scoutName != null ? scoutName : "Estimado(a) Scout", getBaseUrl())
                 : String.format("""
                     <div style='font-family: sans-serif; background: #0A0F1D; color: #F8FAFC; padding: 24px; border-radius: 12px;'>
-                      <div style='text-align: center; margin-bottom: 20px;'>
-                        <img src='%s' alt='Talentus Scout' style='max-height: 44px; display: inline-block;' />
+                      <div style='text-align: center; margin-bottom: 24px;'>
+                        <img src='%s' alt='Talentus Scout' height='110' style='height: 110px; max-height: 120px; width: auto; max-width: 100%%; display: block; margin: 0 auto; border: 0;' />
                       </div>
                       <h2 style='color: #EF4444;'>Observación en tu Acreditación de Scout</h2>
                       <p>Hola %s,</p>
@@ -278,8 +288,8 @@ public class EmailService {
         String htmlBody = approved
                 ? String.format("""
                     <div style='font-family: sans-serif; background: #0A0F1D; color: #F8FAFC; padding: 24px; border-radius: 12px;'>
-                      <div style='text-align: center; margin-bottom: 20px;'>
-                        <img src='%s' alt='Talentus Scout' style='max-height: 44px; display: inline-block;' />
+                      <div style='text-align: center; margin-bottom: 24px;'>
+                        <img src='%s' alt='Talentus Scout' height='110' style='height: 110px; max-height: 120px; width: auto; max-width: 100%%; display: block; margin: 0 auto; border: 0;' />
                       </div>
                       <h2 style='color: #10B981;'>¡Insignia Deportiva Aprobada y Avalada!</h2>
                       <p>Hola %s,</p>
@@ -292,8 +302,8 @@ public class EmailService {
                   """, brandingLogoUrl, tutorName != null ? tutorName : "Representante Legal", badgeTitle, badgeTypeLabel, athleteName, getBaseUrl())
                 : String.format("""
                     <div style='font-family: sans-serif; background: #0A0F1D; color: #F8FAFC; padding: 24px; border-radius: 12px;'>
-                      <div style='text-align: center; margin-bottom: 20px;'>
-                        <img src='%s' alt='Talentus Scout' style='max-height: 44px; display: inline-block;' />
+                      <div style='text-align: center; margin-bottom: 24px;'>
+                        <img src='%s' alt='Talentus Scout' height='110' style='height: 110px; max-height: 120px; width: auto; max-width: 100%%; display: block; margin: 0 auto; border: 0;' />
                       </div>
                       <h2 style='color: #EF4444;'>Observación en la Solicitud de Insignia</h2>
                       <p>Hola %s,</p>
@@ -315,8 +325,8 @@ public class EmailService {
         String subject = "Actualización sobre tu Acreditación de Scout — Talentus Scout";
         String htmlBody = String.format("""
                 <div style='font-family: sans-serif; background: #0A0F1D; color: #F8FAFC; padding: 24px; border-radius: 12px;'>
-                  <div style='text-align: center; margin-bottom: 20px;'>
-                    <img src='%s' alt='Talentus Scout' style='max-height: 44px; display: inline-block;' />
+                  <div style='text-align: center; margin-bottom: 24px;'>
+                    <img src='%s' alt='Talentus Scout' height='110' style='height: 110px; max-height: 120px; width: auto; max-width: 100%%; display: block; margin: 0 auto; border: 0;' />
                   </div>
                   <h2 style='color: #F59E0B;'>Subsanación Requerida: Baja de Organización Deportiva</h2>
                   <p>Hola %s,</p>
@@ -338,7 +348,7 @@ public class EmailService {
         String htmlBody = String.format("""
                 <div style='font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0A0F1D; color: #F8FAFC; padding: 32px 24px; border-radius: 12px; max-width: 600px; margin: 0 auto; border: 1px solid rgba(255, 255, 255, 0.08);'>
                   <div style='text-align: center; margin-bottom: 24px;'>
-                    <img src='%s' alt='Talentus Scout' style='max-height: 48px; display: inline-block;' />
+                    <img src='%s' alt='Talentus Scout' height='110' style='height: 110px; max-height: 120px; width: auto; max-width: 100%%; display: block; margin: 0 auto; border: 0;' />
                   </div>
                   <h2 style='color: #10B981; font-size: 20px; font-weight: 700; margin-top: 0; margin-bottom: 16px;'>Solicitud de Restablecimiento de Contraseña</h2>
                   <p style='color: #E2E8F0; font-size: 15px; line-height: 1.6; margin-bottom: 16px;'>Hola %s,</p>
@@ -368,6 +378,8 @@ public class EmailService {
         String htmlBody = String.format("""
                 <div style='font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0A0F1D; color: #F8FAFC; padding: 32px 24px; border-radius: 12px; max-width: 600px; margin: 0 auto; border: 1px solid rgba(255, 255, 255, 0.08);'>
                   <div style='text-align: center; margin-bottom: 24px;'>
+                    <img src='%s' alt='Talentus Scout' height='110' style='height: 110px; max-height: 120px; width: auto; max-width: 100%%; display: block; margin: 0 auto; border: 0;' />
+                  </div>
                     <img src='%s' alt='Talentus Scout' style='max-height: 48px; display: inline-block;' />
                   </div>
                   <h2 style='color: #10B981; font-size: 20px; font-weight: 700; margin-top: 0; margin-bottom: 16px;'>¡Bienvenido a Talentus Scout!</h2>

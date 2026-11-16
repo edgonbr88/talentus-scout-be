@@ -113,6 +113,9 @@ class AdminNotificationServiceTest {
         assertThat(htmlCaptor.getValue()).contains("Carlos Mendoza");
         assertThat(htmlCaptor.getValue()).contains("V 18765432");
         assertThat(htmlCaptor.getValue()).contains("https://talentusscout.com/admin/verificacion-legal");
+        assertThat(htmlCaptor.getValue()).contains("height='110'");
+        assertThat(htmlCaptor.getValue()).contains("max-height: 120px;");
+        assertThat(htmlCaptor.getValue()).contains("https://talentus.app/logo.png");
     }
 
     @Test
