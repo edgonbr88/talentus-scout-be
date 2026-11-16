@@ -136,6 +136,11 @@ public class ScoutDirectoryService {
 
         String residenceCountry = athlete.getTutor() != null ? athlete.getTutor().getCountry() : null;
 
+        String clubLogoUrl = null;
+        if (athlete.getCurrentClub() != null && athlete.getCurrentClub().getLogoUrl() != null && !athlete.getCurrentClub().getLogoUrl().isBlank()) {
+            clubLogoUrl = athlete.getCurrentClub().getLogoUrl().trim();
+        }
+
         return ScoutDirectoryAthleteItem.builder()
                 .id(athlete.getId())
                 .firstName(athlete.getFirstName())
@@ -151,7 +156,7 @@ public class ScoutDirectoryService {
                 .hasEuropeanPassport(hasEuropeanPassport)
                 .clubId(athlete.getCurrentClub() != null ? athlete.getCurrentClub().getId() : null)
                 .clubName(athlete.getCurrentClub() != null ? athlete.getCurrentClub().getName() : null)
-                .clubLogoUrl(athlete.getCurrentClub() != null ? athlete.getCurrentClub().getLogoUrl() : null)
+                .clubLogoUrl(clubLogoUrl)
                 .profilePhotoUrl(athlete.getProfilePhotoUrl())
                 .slug(athlete.getSlug())
                 .verifiedBadgesCount(verifiedBadgesCount)

@@ -66,6 +66,7 @@ class ScoutDirectoryIntegrationTest {
     private ClubOrganization clubCaracas;
     private Athlete athleteStriker2010;
     private Athlete athleteDefender2008;
+    private Athlete athleteWithoutLogo;
     private Athlete privateAthlete;
 
     @BeforeEach
@@ -118,8 +119,20 @@ class ScoutDirectoryIntegrationTest {
                 .state("Distrito Capital")
                 .country("Venezuela")
                 .verifiedOfficial(true)
+                .logoUrl("https://cdn.talentus.app/logos/caracas.png")
                 .build();
         clubCaracas = clubOrganizationRepository.save(clubCaracas);
+
+        ClubOrganization clubWithoutLogo = ClubOrganization.builder()
+                .name("Academia Sin Escudo " + time)
+                .federationCode("FVF-SIN-" + time)
+                .city("Valencia")
+                .state("Carabobo")
+                .country("Venezuela")
+                .verifiedOfficial(false)
+                .logoUrl("   ")
+                .build();
+        clubWithoutLogo = clubOrganizationRepository.save(clubWithoutLogo);
 
         // 4. Atleta 1: Delantero Centro, 2010, Zurdo, Pasaporte Español, Con Video READY, Público
         athleteStriker2010 = Athlete.builder()
@@ -180,7 +193,23 @@ class ScoutDirectoryIntegrationTest {
                 .build();
         athleteDefender2008 = athleteRepository.save(athleteDefender2008);
 
-        // 6. Atleta 3: Privado (LOPNNA is_public = false), Delantero 2010
+        // 6. Atleta 3: Atleta con club sin logo para validación de sanitización (TS-74)
+        athleteWithoutLogo = Athlete.builder()
+                .tutor(tutor)
+                .firstName("Luis")
+                .lastName("Mendoza " + time)
+                .birthDate(LocalDate.of(2009, 1, 15))
+                .primaryPosition("MEDIOCAMPISTA_CENTRAL")
+                .preferredFoot("DIESTRO")
+                .nationality("Venezolana")
+                .currentClub(clubWithoutLogo)
+                .slug("luis-mendoza-" + time)
+                .isPublic(true)
+                .legalVerificationStatus(LegalVerificationStatus.APPROVED)
+                .build();
+        athleteWithoutLogo = athleteRepository.save(athleteWithoutLogo);
+
+        // 7. Atleta 4: Privado (LOPNNA is_public = false), Delantero 2010
         privateAthlete = Athlete.builder()
                 .tutor(tutor)
                 .firstName("Mateo")
@@ -216,6 +245,15 @@ class ScoutDirectoryIntegrationTest {
                     .endDate(java.time.Instant.now().plus(30, java.time.temporal.ChronoUnit.DAYS))
                     .build();
             athleteSubscriptionRepository.save(sub2);
+
+            AthleteSubscription sub3 = AthleteSubscription.builder()
+                    .athlete(athleteWithoutLogo)
+                    .plan(activePlan)
+                    .status(SubscriptionStatus.ACTIVE)
+                    .startDate(java.time.Instant.now().minus(1, java.time.temporal.ChronoUnit.DAYS))
+                    .endDate(java.time.Instant.now().plus(30, java.time.temporal.ChronoUnit.DAYS))
+                    .build();
+            athleteSubscriptionRepository.save(sub3);
         }
     }
 
@@ -228,6 +266,15 @@ class ScoutDirectoryIntegrationTest {
                 .andExpect(jsonPath("$.content[*].slug", hasItem(athleteStriker2010.getSlug())))
                 .andExpect(jsonPath("$.content[*].slug", hasItem(athleteDefender2008.getSlug())))
                 .andExpect(jsonPath("$.content[*].slug", not(hasItem(privateAthlete.getSlug()))));
+    }
+
+    @Test
+    void getDirectory_ReturnsClubLogoUrl_WhenAvailable_AndNullWhenMissing() throws Exception {
+        mockMvc.perform(get("/api/v1/scouts/directory")
+                        .header("Authorization", "Bearer " + approvedScoutToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[?(@.slug == '" + athleteStriker2010.getSlug() + "')].clubLogoUrl").value(hasItem("https://cdn.talentus.app/logos/caracas.png")))
+                .andExpect(jsonPath("$.content[?(@.slug == '" + athleteWithoutLogo.getSlug() + "')].clubLogoUrl").value(hasItem(nullValue())));
     }
 
     @Test
