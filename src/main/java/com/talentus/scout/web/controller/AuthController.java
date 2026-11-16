@@ -1,6 +1,7 @@
 package com.talentus.scout.web.controller;
 
 import com.talentus.scout.config.JwtProperties;
+import com.talentus.scout.config.OAuthProperties;
 import com.talentus.scout.domain.entity.User;
 import com.talentus.scout.domain.enums.AccountStatus;
 import com.talentus.scout.exception.AccountNotVerifiedException;
@@ -39,6 +40,7 @@ public class AuthController {
     private final ScoutProfileRepository scoutProfileRepository;
     private final SocialAuthService socialAuthService;
     private final PasswordResetService passwordResetService;
+    private final OAuthProperties oauthProperties;
 
     public AuthController(
             AuthenticationManager authenticationManager,
@@ -49,7 +51,8 @@ public class AuthController {
             FileStorageService fileStorageService,
             ScoutProfileRepository scoutProfileRepository,
             SocialAuthService socialAuthService,
-            PasswordResetService passwordResetService
+            PasswordResetService passwordResetService,
+            OAuthProperties oauthProperties
     ) {
         this.authenticationManager = authenticationManager;
         this.userRepository = userRepository;
@@ -60,6 +63,7 @@ public class AuthController {
         this.scoutProfileRepository = scoutProfileRepository;
         this.socialAuthService = socialAuthService;
         this.passwordResetService = passwordResetService;
+        this.oauthProperties = oauthProperties;
     }
 
     @PostMapping("/login")
@@ -226,6 +230,15 @@ public class AuthController {
     private String extractUserAgent(HttpServletRequest httpRequest) {
         String userAgent = httpRequest.getHeader("User-Agent");
         return (userAgent != null && !userAgent.isBlank()) ? userAgent : "UNKNOWN";
+    }
+
+    @GetMapping("/oauth-config")
+    public ResponseEntity<OAuthPublicConfigResponse> getOAuthConfig() {
+        return ResponseEntity.ok(OAuthPublicConfigResponse.builder()
+                .googleClientId(oauthProperties.getGoogle().getClientId())
+                .microsoftClientId(oauthProperties.getMicrosoft().getClientId())
+                .mockEnabled(oauthProperties.isMockEnabled())
+                .build());
     }
 
     @GetMapping("/me")

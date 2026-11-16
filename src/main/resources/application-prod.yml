@@ -68,3 +68,12 @@ talentus:
     api-key: ${RESEND_API_KEY:}
     branding:
       logo-url: ${TALENTUS_MAIL_LOGO_URL:https://talentusscout.com/assets/branding/ts-imagotipo-dark-email.png}
+  oauth:
+    mock-enabled: ${OAUTH_MOCK_ENABLED:false}
+    verify-signature: ${OAUTH_VERIFY_SIGNATURE:true}
+    google:
+      client-id: ${GOOGLE_OAUTH_CLIENT_ID:}
+      jwks-uri: https://www.googleapis.com/oauth2/v3/certs
+    microsoft:
+      client-id: ${MICROSOFT_OAUTH_CLIENT_ID:}
+      jwks-uri: https://login.microsoftonline.com/common/discovery/v2.0/keys

@@ -19,6 +19,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.WebApplicationContext;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -117,5 +118,15 @@ class AuthControllerSocialIntegrationTest {
                 .andExpect(jsonPath("$.role").value("TUTOR"))
                 .andExpect(jsonPath("$.email").value("tutor.completa@talentusscout.com"))
                 .andExpect(jsonPath("$.token").isString());
+    }
+
+    @Test
+    @DisplayName("GET /api/v1/auth/oauth-config: Endpoint público retorna configuración OAuth2 del entorno")
+    void testGetOAuthConfigEndpoint() throws Exception {
+        mockMvc.perform(get("/api/v1/auth/oauth-config"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.googleClientId").isString())
+                .andExpect(jsonPath("$.microsoftClientId").isString())
+                .andExpect(jsonPath("$.mockEnabled").isBoolean());
     }
 }

@@ -2,6 +2,7 @@ package com.talentus.scout.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.talentus.scout.config.JwtProperties;
+import com.talentus.scout.config.OAuthProperties;
 import com.talentus.scout.domain.entity.ScoutProfile;
 import com.talentus.scout.domain.entity.TutorLegalConsent;
 import com.talentus.scout.domain.entity.User;
@@ -38,7 +39,8 @@ class SocialAuthServiceTest {
     private PasswordEncoder passwordEncoder;
     private JwtService jwtService;
     private JwtProperties jwtProperties;
-    private ObjectMapper objectMapper;
+    private OAuthProperties oauthProperties;
+    private OAuthTokenVerifierService tokenVerifierService;
 
     private SocialAuthService socialAuthService;
 
@@ -51,7 +53,8 @@ class SocialAuthServiceTest {
         passwordEncoder = mock(PasswordEncoder.class);
         jwtService = mock(JwtService.class);
         jwtProperties = mock(JwtProperties.class);
-        objectMapper = new ObjectMapper();
+        oauthProperties = new OAuthProperties();
+        tokenVerifierService = mock(OAuthTokenVerifierService.class);
 
         when(jwtProperties.getExpirationTime()).thenReturn(86400000L);
         when(jwtService.generateToken(any())).thenReturn("mock-jwt-token-xyz");
@@ -65,7 +68,8 @@ class SocialAuthServiceTest {
                 passwordEncoder,
                 jwtService,
                 jwtProperties,
-                objectMapper
+                oauthProperties,
+                tokenVerifierService
         );
     }
 
@@ -258,5 +262,42 @@ class SocialAuthServiceTest {
         assertEquals(UserRole.SCOUT, response.getRole());
         assertTrue(pendingUser.isProfileCompleted());
         verify(scoutProfileRepository, times(1)).save(any(ScoutProfile.class));
+    }
+
+    @Test
+    @DisplayName("Producción (mockEnabled = false): Rechaza tokens mock- con IllegalArgumentException")
+    void testRejectsMockTokensWhenMockDisabled() {
+        oauthProperties.setMockEnabled(false);
+
+        SocialAuthRequest request = SocialAuthRequest.builder()
+                .token("mock-google-token:attacker@talentusscout.com")
+                .mockName("Attacker")
+                .build();
+
+        assertThrows(IllegalArgumentException.class, () ->
+                socialAuthService.authenticateWithGoogle(request, "127.0.0.1", "TestAgent"));
+
+        verify(userRepository, never()).save(any());
+        verify(userSocialIdentityRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Token real JWT: Delega verificación criptográfica a OAuthTokenVerifierService y no permite fallback a mockEmail")
+    void testRealJwtDelegatesToVerifierWithoutFallback() {
+        oauthProperties.setMockEnabled(false);
+        String realLikeJwt = "eyJhbGciOiJSUzI1NiIsImtpZCI6ImtleTEifQ.eyJzdWIiOiIxMjMifQ.invalid-sig";
+
+        when(tokenVerifierService.verifyAndExtractClaims("GOOGLE", realLikeJwt))
+                .thenThrow(new IllegalArgumentException("Firma inválida"));
+
+        SocialAuthRequest request = SocialAuthRequest.builder()
+                .token(realLikeJwt)
+                .mockEmail("spoofed@talentusscout.com")
+                .build();
+
+        assertThrows(IllegalArgumentException.class, () ->
+                socialAuthService.authenticateWithGoogle(request, "127.0.0.1", "TestAgent"));
+
+        verify(tokenVerifierService, times(1)).verifyAndExtractClaims("GOOGLE", realLikeJwt);
     }
 }
