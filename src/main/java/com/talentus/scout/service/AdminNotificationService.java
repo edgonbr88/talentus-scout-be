@@ -63,8 +63,8 @@ public class AdminNotificationService {
 
         String htmlBody = String.format("""
                 <div style='font-family: sans-serif; background: #0A0F1D; color: #F8FAFC; padding: 24px; border-radius: 12px;'>
-                  <div style='text-align: center; margin-bottom: 20px;'>
-                    <img src='%s' alt='Talentus Scout' style='max-height: 44px; display: inline-block;' />
+                  <div style='text-align: center; margin-bottom: 24px;'>
+                    <img src='%s' alt='Talentus Scout' height='110' style='height: 110px; max-height: 120px; width: auto; max-width: 100%%; display: block; margin: 0 auto; border: 0;' />
                   </div>
                   <div style='background: rgba(16, 185, 129, 0.15); border: 1px solid #10B981; padding: 12px; border-radius: 8px; margin-bottom: 20px;'>
                     <strong style='color: #10B981; font-size: 14px;'>NUEVO REPRESENTANTE / TUTOR LEGAL REGISTRADO</strong>
@@ -118,8 +118,8 @@ public class AdminNotificationService {
 
         String htmlBody = String.format("""
                 <div style='font-family: sans-serif; background: #0A0F1D; color: #F8FAFC; padding: 24px; border-radius: 12px;'>
-                  <div style='text-align: center; margin-bottom: 20px;'>
-                    <img src='%s' alt='Talentus Scout' style='max-height: 44px; display: inline-block;' />
+                  <div style='text-align: center; margin-bottom: 24px;'>
+                    <img src='%s' alt='Talentus Scout' height='110' style='height: 110px; max-height: 120px; width: auto; max-width: 100%%; display: block; margin: 0 auto; border: 0;' />
                   </div>
                   <div style='background: rgba(56, 189, 248, 0.15); border: 1px solid #38BDF8; padding: 12px; border-radius: 8px; margin-bottom: 20px;'>
                     <strong style='color: #38BDF8; font-size: 14px;'>NUEVO ATLETA REGISTRADO — AUDITORÍA DE PATRIA POTESTAD</strong>
@@ -166,8 +166,8 @@ public class AdminNotificationService {
 
         String htmlBody = String.format("""
                 <div style='font-family: sans-serif; background: #0A0F1D; color: #F8FAFC; padding: 24px; border-radius: 12px;'>
-                  <div style='text-align: center; margin-bottom: 20px;'>
-                    <img src='%s' alt='Talentus Scout' style='max-height: 44px; display: inline-block;' />
+                  <div style='text-align: center; margin-bottom: 24px;'>
+                    <img src='%s' alt='Talentus Scout' height='110' style='height: 110px; max-height: 120px; width: auto; max-width: 100%%; display: block; margin: 0 auto; border: 0;' />
                   </div>
                   <div style='background: rgba(245, 158, 11, 0.15); border: 1px solid #F59E0B; padding: 12px; border-radius: 8px; margin-bottom: 20px;'>
                     <strong style='color: #F59E0B; font-size: 14px;'>NUEVA ORGANIZACIÓN DEPORTIVA REGISTRADA POR LA COMUNIDAD</strong>
@@ -215,8 +215,8 @@ public class AdminNotificationService {
 
         String htmlBody = String.format("""
                 <div style='font-family: sans-serif; background: #0A0F1D; color: #F8FAFC; padding: 24px; border-radius: 12px;'>
-                  <div style='text-align: center; margin-bottom: 20px;'>
-                    <img src='%s' alt='Talentus Scout' style='max-height: 44px; display: inline-block;' />
+                  <div style='text-align: center; margin-bottom: 24px;'>
+                    <img src='%s' alt='Talentus Scout' height='110' style='height: 110px; max-height: 120px; width: auto; max-width: 100%%; display: block; margin: 0 auto; border: 0;' />
                   </div>
                   <div style='background: rgba(192, 132, 252, 0.15); border: 1px solid #C084FC; padding: 12px; border-radius: 8px; margin-bottom: 20px;'>
                     <strong style='color: #C084FC; font-size: 14px;'>NUEVA SOLICITUD DE SCOUT / VEEDOR EN ESPERA DE ACREDITACIÓN</strong>
