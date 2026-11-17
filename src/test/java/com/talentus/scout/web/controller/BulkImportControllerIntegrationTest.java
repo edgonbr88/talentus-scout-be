@@ -187,4 +187,63 @@ class BulkImportControllerIntegrationTest {
                         && a.getCurrentClub() != null
                         && club.getId().equals(a.getCurrentClub().getId())));
     }
+
+    @Test
+    void adminUserShouldBeForbiddenFromBulkImportOperations() throws Exception {
+        long ts = System.currentTimeMillis();
+        User adminUser = userRepository.save(User.builder()
+                .email("admin.bulk." + ts + "@talentus.test")
+                .passwordHash(passwordEncoder.encode("Password123*"))
+                .fullName("Admin Bulk Test")
+                .phoneNumber("+584120003344")
+                .role(UserRole.ADMIN)
+                .status(AccountStatus.ACTIVE)
+                .build());
+
+        String adminToken = jwtService.generateToken(adminUser);
+
+        try {
+            MockMultipartFile file = new MockMultipartFile(
+                    "file",
+                    "test.csv",
+                    "text/csv",
+                    "dummy".getBytes(StandardCharsets.UTF_8)
+            );
+
+            // POST /upload with ADMIN token -> 403 Forbidden
+            mockMvc.perform(multipart("/api/v1/scout/bulk-import/upload")
+                            .file(file)
+                            .header("Authorization", "Bearer " + adminToken))
+                    .andExpect(status().isForbidden());
+
+            // POST /google-sheet with ADMIN token -> 403 Forbidden
+            mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/api/v1/scout/bulk-import/google-sheet")
+                            .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                            .content("{\"sheetUrlOrId\":\"https://docs.google.com/spreadsheets/d/abc123xyz/edit\"}")
+                            .header("Authorization", "Bearer " + adminToken))
+                    .andExpect(status().isForbidden());
+
+            // GET /jobs with ADMIN token -> 403 Forbidden
+            mockMvc.perform(get("/api/v1/scout/bulk-import/jobs")
+                            .header("Authorization", "Bearer " + adminToken))
+                    .andExpect(status().isForbidden());
+
+            // GET /jobs/{jobId} with ADMIN token -> 403 Forbidden
+            mockMvc.perform(get("/api/v1/scout/bulk-import/jobs/" + UUID.randomUUID())
+                            .header("Authorization", "Bearer " + adminToken))
+                    .andExpect(status().isForbidden());
+
+            // GET /jobs/{jobId}/report with ADMIN token -> 403 Forbidden
+            mockMvc.perform(get("/api/v1/scout/bulk-import/jobs/" + UUID.randomUUID() + "/report")
+                            .header("Authorization", "Bearer " + adminToken))
+                    .andExpect(status().isForbidden());
+
+            // GET /template with ADMIN token -> 200 OK (template is public/informative)
+            mockMvc.perform(get("/api/v1/scout/bulk-import/template?format=csv")
+                            .header("Authorization", "Bearer " + adminToken))
+                    .andExpect(status().isOk());
+        } finally {
+            userRepository.delete(adminUser);
+        }
+    }
 }

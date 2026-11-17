@@ -30,7 +30,7 @@ public class BulkImportController {
     private final UserRepository userRepository;
 
     @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @PreAuthorize("hasAnyRole('SCOUT', 'ADMIN', 'VERIFIER_ORG')")
+    @PreAuthorize("hasAnyRole('SCOUT', 'VERIFIER_ORG')")
     public ResponseEntity<BulkImportJobResponseDto> uploadFile(
             @RequestParam("file") MultipartFile file,
             Authentication authentication
@@ -41,7 +41,7 @@ public class BulkImportController {
     }
 
     @PostMapping(value = "/google-sheet", consumes = MediaType.APPLICATION_JSON_VALUE)
-    @PreAuthorize("hasAnyRole('SCOUT', 'ADMIN', 'VERIFIER_ORG')")
+    @PreAuthorize("hasAnyRole('SCOUT', 'VERIFIER_ORG')")
     public ResponseEntity<BulkImportJobResponseDto> importGoogleSheet(
             @Valid @RequestBody GoogleSheetImportRequestDto request,
             Authentication authentication
@@ -52,7 +52,7 @@ public class BulkImportController {
     }
 
     @GetMapping("/jobs/{jobId}")
-    @PreAuthorize("hasAnyRole('SCOUT', 'ADMIN', 'VERIFIER_ORG')")
+    @PreAuthorize("hasAnyRole('SCOUT', 'VERIFIER_ORG')")
     public ResponseEntity<BulkImportJobResponseDto> getJobStatus(
             @PathVariable UUID jobId,
             Authentication authentication
@@ -62,7 +62,7 @@ public class BulkImportController {
     }
 
     @GetMapping("/jobs")
-    @PreAuthorize("hasAnyRole('SCOUT', 'ADMIN', 'VERIFIER_ORG')")
+    @PreAuthorize("hasAnyRole('SCOUT', 'VERIFIER_ORG')")
     public ResponseEntity<List<BulkImportJobResponseDto>> getScoutJobs(
             Authentication authentication
     ) {
@@ -87,7 +87,7 @@ public class BulkImportController {
     }
 
     @GetMapping("/jobs/{jobId}/report")
-    @PreAuthorize("hasAnyRole('SCOUT', 'ADMIN', 'VERIFIER_ORG')")
+    @PreAuthorize("hasAnyRole('SCOUT', 'VERIFIER_ORG')")
     public ResponseEntity<byte[]> downloadErrorReport(
             @PathVariable UUID jobId,
             Authentication authentication
