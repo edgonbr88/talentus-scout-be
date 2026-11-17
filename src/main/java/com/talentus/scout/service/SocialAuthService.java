@@ -1,8 +1,7 @@
 package com.talentus.scout.service;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.talentus.scout.config.JwtProperties;
+import com.talentus.scout.config.OAuthProperties;
 import com.talentus.scout.domain.entity.ScoutProfile;
 import com.talentus.scout.domain.entity.TutorLegalConsent;
 import com.talentus.scout.domain.entity.User;
@@ -21,19 +20,18 @@ import com.talentus.scout.web.dto.AuthResponse;
 import com.talentus.scout.web.dto.CompleteProfileRequest;
 import com.talentus.scout.web.dto.SocialAuthRequest;
 import com.talentus.scout.web.dto.SocialAuthResponse;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.nio.charset.StandardCharsets;
-import java.time.Instant;
-import java.util.Base64;
 import java.util.Optional;
 import java.util.UUID;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class SocialAuthService {
 
     private final UserRepository userRepository;
@@ -43,27 +41,8 @@ public class SocialAuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final JwtProperties jwtProperties;
-    private final ObjectMapper objectMapper;
-
-    public SocialAuthService(
-            UserRepository userRepository,
-            UserSocialIdentityRepository userSocialIdentityRepository,
-            TutorLegalConsentRepository tutorLegalConsentRepository,
-            ScoutProfileRepository scoutProfileRepository,
-            PasswordEncoder passwordEncoder,
-            JwtService jwtService,
-            JwtProperties jwtProperties,
-            ObjectMapper objectMapper
-    ) {
-        this.userRepository = userRepository;
-        this.userSocialIdentityRepository = userSocialIdentityRepository;
-        this.tutorLegalConsentRepository = tutorLegalConsentRepository;
-        this.scoutProfileRepository = scoutProfileRepository;
-        this.passwordEncoder = passwordEncoder;
-        this.jwtService = jwtService;
-        this.jwtProperties = jwtProperties;
-        this.objectMapper = objectMapper;
-    }
+    private final OAuthProperties oauthProperties;
+    private final OAuthTokenVerifierService tokenVerifierService;
 
     @Transactional
     public SocialAuthResponse authenticateWithGoogle(SocialAuthRequest request, String ip, String userAgent) {
@@ -198,102 +177,57 @@ public class SocialAuthService {
     }
 
     private SocialClaims resolveGoogleClaims(SocialAuthRequest request) {
-        String token = request.getToken();
-
-        // Soporte Modo Sandbox / Pruebas Locales
-        if (token.startsWith("mock-") || token.contains("sandbox")) {
-            String email = (request.getMockEmail() != null && !request.getMockEmail().isBlank())
-                    ? request.getMockEmail()
-                    : extractEmailFromMockToken(token, "tutor.google@talentusscout.com");
-            String name = (request.getMockName() != null && !request.getMockName().isBlank())
-                    ? request.getMockName()
-                    : "Usuario Google Demo";
-            String sub = "google_sub_" + Math.abs(email.hashCode());
-            return new SocialClaims(sub, email, name);
-        }
-
-        // Token Real: intentar parsear JWT Claims (Base64Url)
-        try {
-            return parseJwtClaims(token, "google");
-        } catch (Exception e) {
-            log.warn("Fallo al decodificar token de Google, utilizando datos de respaldo o fallback: {}", e.getMessage());
-            if (request.getMockEmail() != null && !request.getMockEmail().isBlank()) {
-                String sub = "google_sub_" + Math.abs(request.getMockEmail().hashCode());
-                return new SocialClaims(sub, request.getMockEmail(), request.getMockName() != null ? request.getMockName() : "Google User");
-            }
-            throw new IllegalArgumentException("Token de autenticación de Google inválido: " + e.getMessage());
-        }
+        return resolveProviderClaims(
+                SocialProvider.GOOGLE.name(),
+                request,
+                "tutor.google@talentusscout.com",
+                "Usuario Google Demo",
+                "google_sub_"
+        );
     }
 
     private SocialClaims resolveMicrosoftClaims(SocialAuthRequest request) {
-        String token = request.getToken();
-
-        // Soporte Modo Sandbox / Pruebas Locales
-        if (token.startsWith("mock-") || token.contains("sandbox")) {
-            String email = (request.getMockEmail() != null && !request.getMockEmail().isBlank())
-                    ? request.getMockEmail()
-                    : extractEmailFromMockToken(token, "scout.microsoft@talentusscout.com");
-            String name = (request.getMockName() != null && !request.getMockName().isBlank())
-                    ? request.getMockName()
-                    : "Usuario Microsoft Demo";
-            String sub = "ms_sub_" + Math.abs(email.hashCode());
-            return new SocialClaims(sub, email, name);
-        }
-
-        // Token Real: intentar parsear JWT Claims (Base64Url)
-        try {
-            return parseJwtClaims(token, "microsoft");
-        } catch (Exception e) {
-            log.warn("Fallo al decodificar token de Microsoft, utilizando datos de respaldo o fallback: {}", e.getMessage());
-            if (request.getMockEmail() != null && !request.getMockEmail().isBlank()) {
-                String sub = "ms_sub_" + Math.abs(request.getMockEmail().hashCode());
-                return new SocialClaims(sub, request.getMockEmail(), request.getMockName() != null ? request.getMockName() : "Microsoft User");
-            }
-            throw new IllegalArgumentException("Token de autenticación de Microsoft inválido: " + e.getMessage());
-        }
+        return resolveProviderClaims(
+                SocialProvider.MICROSOFT.name(),
+                request,
+                "scout.microsoft@talentusscout.com",
+                "Usuario Microsoft Demo",
+                "ms_sub_"
+        );
     }
 
-    private SocialClaims parseJwtClaims(String jwtToken, String provider) {
-        try {
-            String[] parts = jwtToken.split("\\.");
-            if (parts.length < 2) {
-                throw new IllegalArgumentException("Formato de token JWT inválido");
-            }
-            byte[] decodedBytes = Base64.getUrlDecoder().decode(parts[1]);
-            String payloadJson = new String(decodedBytes, StandardCharsets.UTF_8);
-            JsonNode root = objectMapper.readTree(payloadJson);
-
-            String sub = root.hasNonNull("sub") ? root.get("sub").asText()
-                    : (root.hasNonNull("oid") ? root.get("oid").asText() : UUID.randomUUID().toString());
-            String email = null;
-            if (root.hasNonNull("email")) {
-                email = root.get("email").asText();
-            } else if (root.hasNonNull("preferred_username")) {
-                email = root.get("preferred_username").asText();
-            } else if (root.hasNonNull("upn")) {
-                email = root.get("upn").asText();
-            }
-
-            if (email == null || email.isBlank()) {
-                throw new IllegalArgumentException("El token no contiene un correo electrónico válido");
-            }
-
-            String name = null;
-            if (root.hasNonNull("name")) {
-                name = root.get("name").asText();
-            } else if (root.hasNonNull("given_name")) {
-                name = root.get("given_name").asText();
-                if (root.hasNonNull("family_name")) {
-                    name += " " + root.get("family_name").asText();
-                }
-            } else {
-                name = email.split("@")[0];
-            }
-
-            return new SocialClaims(sub, email, name);
-        } catch (Exception ex) {
-            throw new IllegalArgumentException("Error procesando claims JWT de " + provider + ": " + ex.getMessage(), ex);
+    private SocialClaims resolveProviderClaims(
+            String provider,
+            SocialAuthRequest request,
+            String defaultMockEmail,
+            String defaultMockName,
+            String mockSubPrefix
+    ) {
+        String token = request.getToken();
+        if (token == null || token.isBlank()) {
+            throw new IllegalArgumentException("El token de autenticación social es obligatorio.");
         }
+
+        // Soporte Modo Sandbox / Pruebas Locales (bloqueado estrictamente en producción)
+        if (token.startsWith("mock-") || token.contains("sandbox")) {
+            if (!oauthProperties.isMockEnabled()) {
+                log.warn("Intento rechazado de autenticación social con token mock en entorno con mockEnabled=false (provider={})", provider);
+                throw new IllegalArgumentException("El modo de autenticación social simulado está deshabilitado en este entorno.");
+            }
+            String email = (request.getMockEmail() != null && !request.getMockEmail().isBlank())
+                    ? request.getMockEmail()
+                    : extractEmailFromMockToken(token, defaultMockEmail);
+            String name = (request.getMockName() != null && !request.getMockName().isBlank())
+                    ? request.getMockName()
+                    : defaultMockName;
+            String sub = mockSubPrefix + Math.abs(email.hashCode());
+            return new SocialClaims(sub, email, name);
+        }
+
+        // Token Real: verificación criptográfica RS256 JWKS + iss + aud + exp
+        OAuthTokenVerifierService.VerifiedSocialClaims verified =
+                tokenVerifierService.verifyAndExtractClaims(provider, token);
+        return new SocialClaims(verified.providerUserId(), verified.email(), verified.fullName());
     }
 
     private String extractEmailFromMockToken(String token, String fallbackEmail) {

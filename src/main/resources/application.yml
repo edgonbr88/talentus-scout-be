@@ -76,3 +76,12 @@ talentus:
       email: ${ZELLE_EMAIL:pagos@talentusscout.com}
       account-holder: ${ZELLE_ACCOUNT_HOLDER:Talentus Scout LLC}
       qr-image-url: ${ZELLE_QR_IMAGE_URL:}
+  oauth:
+    mock-enabled: ${OAUTH_MOCK_ENABLED:true}
+    verify-signature: ${OAUTH_VERIFY_SIGNATURE:true}
+    google:
+      client-id: ${GOOGLE_OAUTH_CLIENT_ID:}
+      jwks-uri: https://www.googleapis.com/oauth2/v3/certs
+    microsoft:
+      client-id: ${MICROSOFT_OAUTH_CLIENT_ID:}
+      jwks-uri: https://login.microsoftonline.com/common/discovery/v2.0/keys
