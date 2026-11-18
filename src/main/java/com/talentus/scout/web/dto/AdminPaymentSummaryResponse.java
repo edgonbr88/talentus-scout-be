@@ -18,4 +18,6 @@ public class AdminPaymentSummaryResponse {
     private long binancePayApprovedCount;
     private long pagoMovilApprovedCount;
     private long zelleApprovedCount;
+    private long vexpayApprovedCount;
+    private long reversedCount;
 }

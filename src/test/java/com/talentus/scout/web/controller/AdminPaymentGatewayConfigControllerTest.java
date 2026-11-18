@@ -88,7 +88,10 @@ class AdminPaymentGatewayConfigControllerTest {
                 .andExpect(jsonPath("$.pagoMovilEnabled", notNullValue()))
                 .andExpect(jsonPath("$.binanceManualEnabled", notNullValue()))
                 .andExpect(jsonPath("$.zelleEnabled", notNullValue()))
-                .andExpect(jsonPath("$.zelleEmail", notNullValue()));
+                .andExpect(jsonPath("$.zelleEmail", notNullValue()))
+                .andExpect(jsonPath("$.vexpayEnabled", notNullValue()))
+                .andExpect(jsonPath("$.vexpayConfigured", notNullValue()))
+                .andExpect(jsonPath("$.vexpayLivemode", notNullValue()));
     }
 
     @Test

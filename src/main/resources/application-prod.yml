@@ -68,6 +68,18 @@ talentus:
     api-key: ${RESEND_API_KEY:}
     branding:
       logo-url: ${TALENTUS_MAIL_LOGO_URL:https://talentusscout.com/assets/branding/ts-imagotipo-dark-email.png}
+  payments:
+    vexpay:
+      api-url: ${VEXPAY_API_URL:https://api.vexpay.app}
+      api-key: ${VEXPAY_API_KEY:}
+      webhook-secret: ${VEXPAY_WEBHOOK_SECRET:}
+      webhook-tolerance-seconds: ${VEXPAY_WEBHOOK_TOLERANCE_SECONDS:300}
+      success-url: ${VEXPAY_SUCCESS_URL:https://talentusscout.com/dashboard?payment=vexpay_return}
+      cancel-url: ${VEXPAY_CANCEL_URL:https://talentusscout.com/dashboard?payment=vexpay_cancelled}
+      reconcile-enabled: ${VEXPAY_RECONCILE_ENABLED:true}
+      reconcile-interval-ms: ${VEXPAY_RECONCILE_INTERVAL_MS:300000}
+      reconcile-lookback-hours: ${VEXPAY_RECONCILE_LOOKBACK_HOURS:48}
+      livemode: ${VEXPAY_LIVEMODE:true}
   oauth:
     mock-enabled: ${OAUTH_MOCK_ENABLED:false}
     verify-signature: ${OAUTH_VERIFY_SIGNATURE:true}

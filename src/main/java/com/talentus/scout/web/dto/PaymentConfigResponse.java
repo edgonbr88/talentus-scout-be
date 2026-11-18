@@ -36,4 +36,8 @@ public class PaymentConfigResponse {
     private String zelleEmail;
     private String zelleAccountHolder;
     private String zelleQrImageUrl;
+    @Builder.Default
+    private Boolean vexpayEnabled = true;
+    @Builder.Default
+    private Boolean vexpayConfigured = false;
 }

@@ -5,9 +5,11 @@ import com.talentus.scout.domain.enums.PaymentStatus;
 import com.talentus.scout.domain.entity.User;
 import com.talentus.scout.repository.UserRepository;
 import com.talentus.scout.service.payment.AdminPaymentService;
+import com.talentus.scout.service.payment.VexPayService;
 import com.talentus.scout.web.dto.AdminPaymentSummaryResponse;
 import com.talentus.scout.web.dto.AdminReviewPaymentRequest;
 import com.talentus.scout.web.dto.PaymentTransactionResponse;
+import com.talentus.scout.web.dto.VexPayReconciliationResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -29,6 +31,7 @@ import java.util.UUID;
 public class AdminPaymentController {
 
     private final AdminPaymentService adminPaymentService;
+    private final VexPayService vexPayService;
     private final UserRepository userRepository;
 
     @GetMapping("/summary")
@@ -70,6 +73,11 @@ public class AdminPaymentController {
                 .orElseThrow(() -> new IllegalArgumentException("Usuario administrador no encontrado."));
         String reason = request != null ? request.getRejectionReason() : null;
         return ResponseEntity.ok(adminPaymentService.rejectPayment(id, admin.getId(), reason));
+    }
+
+    @PostMapping("/vexpay/reconcile")
+    public ResponseEntity<VexPayReconciliationResponse> reconcileVexPayPayments() {
+        return ResponseEntity.ok(vexPayService.reconcilePendingTransactions());
     }
 }
 

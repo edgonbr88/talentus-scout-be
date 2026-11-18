@@ -1,11 +1,13 @@
 package com.talentus.scout.web.controller;
 
 import com.talentus.scout.domain.entity.User;
+import com.talentus.scout.domain.enums.UserRole;
 import com.talentus.scout.repository.UserRepository;
 import com.talentus.scout.service.payment.BcvRateService;
 import com.talentus.scout.service.payment.BinancePayService;
 import com.talentus.scout.service.payment.PaymentConfigService;
 import com.talentus.scout.service.payment.PaymentService;
+import com.talentus.scout.service.payment.VexPayService;
 import com.talentus.scout.web.dto.*;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -16,7 +18,9 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Slf4j
@@ -29,6 +33,7 @@ public class PaymentController {
     private final BcvRateService bcvRateService;
     private final PaymentService paymentService;
     private final BinancePayService binancePayService;
+    private final VexPayService vexPayService;
     private final UserRepository userRepository;
     private final com.talentus.scout.service.payment.DiscountCodeService discountCodeService;
 
@@ -161,5 +166,52 @@ public class PaymentController {
         User user = userRepository.findByEmail(authentication.getName())
                 .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado."));
         return ResponseEntity.ok(paymentService.getTutorPayments(user.getId()));
+    }
+
+    // --- Integración VexPay (TS-78) ---
+
+    @GetMapping("/vexpay/quote")
+    @PreAuthorize("hasAnyRole('TUTOR', 'ATHLETE', 'ADMIN')")
+    public ResponseEntity<VexPayQuoteResponse> getVexPayQuote(
+            @RequestParam(required = false) BigDecimal usdAmount,
+            @RequestParam(required = false) String planId,
+            @RequestParam(required = false) String discountCode,
+            @RequestParam(required = false) UUID athleteId
+    ) {
+        return ResponseEntity.ok(vexPayService.getQuote(usdAmount, planId, discountCode, athleteId));
+    }
+
+    @PostMapping("/vexpay/checkout-session")
+    @PreAuthorize("hasAnyRole('TUTOR', 'ATHLETE', 'ADMIN')")
+    public ResponseEntity<CreateVexPaySessionResponse> createVexPayCheckoutSession(
+            Authentication authentication,
+            @Valid @RequestBody CreateVexPaySessionRequest request
+    ) {
+        User user = userRepository.findByEmail(authentication.getName())
+                .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado."));
+        boolean isAdmin = user.getRole() == UserRole.ADMIN;
+        CreateVexPaySessionResponse response = vexPayService.createCheckoutSession(user.getId(), isAdmin, request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @PostMapping("/vexpay/sessions/{sessionId}/verify")
+    @PreAuthorize("hasAnyRole('TUTOR', 'ATHLETE', 'ADMIN')")
+    public ResponseEntity<VexPaySessionVerifyResponse> verifyVexPaySession(
+            Authentication authentication,
+            @PathVariable String sessionId
+    ) {
+        User user = userRepository.findByEmail(authentication.getName())
+                .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado."));
+        boolean isAdmin = user.getRole() == UserRole.ADMIN;
+        return ResponseEntity.ok(vexPayService.verifyCheckoutSession(sessionId, user.getId(), isAdmin));
+    }
+
+    @PostMapping("/vexpay/webhook")
+    public ResponseEntity<Map<String, Object>> handleVexPayWebhook(
+            @RequestBody String rawBody,
+            @RequestHeader(value = "VexPay-Signature", required = false) String signature,
+            @RequestHeader(value = "VexPay-Event-Id", required = false) String eventId
+    ) {
+        return ResponseEntity.ok(vexPayService.handleWebhook(rawBody, signature, eventId));
     }
 }

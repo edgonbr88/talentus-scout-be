@@ -12,6 +12,8 @@ public interface DiscountCodeRedemptionRepository extends JpaRepository<Discount
 
     boolean existsByDiscountCodeIdAndAthleteId(UUID discountCodeId, UUID athleteId);
 
+    boolean existsByPaymentTransactionId(UUID paymentTransactionId);
+
     long countByDiscountCodeId(UUID discountCodeId);
 
     List<DiscountCodeRedemption> findByDiscountCodeId(UUID discountCodeId);

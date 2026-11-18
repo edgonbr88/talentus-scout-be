@@ -30,6 +30,9 @@ public class PaymentTransactionResponse {
     private BigDecimal bcvExchangeRate;
     private String referenceNumber;
     private String gatewayOrderId;
+    private String vexpaySessionId;
+    private String vexpayPaymentId;
+    private String vexpaySubMethod;
     private LocalDate paymentDate;
     private String originBank;
     private String originPhone;

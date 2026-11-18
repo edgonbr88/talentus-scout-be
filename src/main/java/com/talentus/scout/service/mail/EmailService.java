@@ -194,6 +194,28 @@ public class EmailService {
         return dispatchEmail(toEmail, subject, htmlBody, mockDetails);
     }
 
+    public boolean sendPaymentReversedNotification(String toEmail, String tutorName, String athleteName,
+                                                   String planName, String reversalType, String reversalRef) {
+        String subject = "Aviso importante: Reverso de pago para " + athleteName + " — Talentus Scout";
+        String refText = (reversalRef != null && !reversalRef.isBlank()) ? reversalRef : "N/A";
+        String typeText = (reversalType != null && !reversalType.isBlank()) ? reversalType : "reverso bancario";
+
+        String htmlBody = String.format("""
+                <div style='font-family: sans-serif; background: #0A0F1D; color: #F8FAFC; padding: 24px; border-radius: 12px;'>
+                  <div style='text-align: center; margin-bottom: 24px;'>
+                    <img src='%s' alt='Talentus Scout' height='110' style='height: 110px; max-height: 120px; width: auto; max-width: 100%%; display: block; margin: 0 auto; border: 0;' />
+                  </div>
+                  <h2 style='color: #F59E0B;'>Suscripción Suspendida por Reverso de Pago</h2>
+                  <p>Hola %s,</p>
+                  <p>La pasarela de pagos notificó un reverso (<strong>%s</strong>, ref: <code>%s</code>) sobre la operación correspondiente al plan <strong>%s</strong> de <strong>%s</strong>.</p>
+                  <p>Por seguridad contable, la vigencia asociada a esa transacción fue revertida automáticamente. Si se trató de un error bancario, puedes iniciar un nuevo pago desde tu panel.</p>
+                </div>
+                """, brandingLogoUrl, tutorName != null ? tutorName : "Representante", typeText, refText, planName, athleteName);
+
+        String mockDetails = String.format("Atleta: %s\nPlan: %s\nReverso: %s (Ref: %s)", athleteName, planName, typeText, refText);
+        return dispatchEmail(toEmail, subject, htmlBody, mockDetails);
+    }
+
     public boolean sendLegalVerificationResolutionNotification(String toEmail, String tutorName, String athleteName,
                                                               boolean approved, String reason) {
         String subject = approved

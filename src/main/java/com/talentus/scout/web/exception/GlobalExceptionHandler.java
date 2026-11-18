@@ -4,7 +4,9 @@ import com.talentus.scout.exception.AccountNotVerifiedException;
 import com.talentus.scout.exception.EmailAlreadyExistsException;
 import com.talentus.scout.exception.InvalidTokenException;
 import com.talentus.scout.exception.ResourceNotFoundException;
+import com.talentus.scout.exception.VexPayApiException;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.FieldError;
@@ -108,6 +110,16 @@ public class GlobalExceptionHandler {
                 : "Acceso denegado: no posees los permisos requeridos para este recurso.");
         body.put("timestamp", Instant.now().toString());
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(body);
+    }
+
+    @ExceptionHandler(VexPayApiException.class)
+    public ResponseEntity<ProblemDetail> handleVexPayApiException(VexPayApiException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(ex.getStatus(), ex.getMessage());
+        problem.setTitle("VexPay Gateway Error");
+        problem.setProperty("errorCode", ex.getErrorCode());
+        problem.setProperty("message", ex.getMessage());
+        problem.setProperty("timestamp", Instant.now().toString());
+        return ResponseEntity.status(ex.getStatus()).body(problem);
     }
 
     @ExceptionHandler(org.springframework.web.multipart.MaxUploadSizeExceededException.class)
