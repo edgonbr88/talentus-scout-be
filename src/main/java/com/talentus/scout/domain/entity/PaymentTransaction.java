@@ -70,6 +70,21 @@ public class PaymentTransaction {
     @Column(name = "gateway_order_id", length = 100)
     private String gatewayOrderId;
 
+    @Column(name = "vexpay_session_id", length = 120)
+    private String vexpaySessionId;
+
+    @Column(name = "vexpay_payment_id", length = 120)
+    private String vexpayPaymentId;
+
+    @Column(name = "vexpay_sub_method", length = 50)
+    private String vexpaySubMethod;
+
+    @Column(name = "applied_subscription_id")
+    private UUID appliedSubscriptionId;
+
+    @Column(name = "previous_subscription_end_date")
+    private Instant previousSubscriptionEndDate;
+
     @Column(name = "raw_webhook_payload", columnDefinition = "TEXT")
     private String rawWebhookPayload;
 

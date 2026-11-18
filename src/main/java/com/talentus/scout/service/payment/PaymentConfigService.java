@@ -1,5 +1,6 @@
 package com.talentus.scout.service.payment;
 
+import com.talentus.scout.config.VexPayProperties;
 import com.talentus.scout.domain.entity.PaymentGatewaySetting;
 import com.talentus.scout.domain.entity.SubscriptionPlan;
 import com.talentus.scout.repository.PaymentGatewaySettingRepository;
@@ -22,6 +23,7 @@ public class PaymentConfigService {
     private final BcvRateService bcvRateService;
     private final SubscriptionPlanRepository subscriptionPlanRepository;
     private final PaymentGatewaySettingRepository paymentGatewaySettingRepository;
+    private final VexPayProperties vexPayProperties;
 
     @Value("${talentus.payments.pago-movil.bank-name:Banco Nacional de Crédito (BNC)}")
     private String defaultBankName;
@@ -83,6 +85,9 @@ public class PaymentConfigService {
         String zelleHolder = settingOpt.map(PaymentGatewaySetting::getZelleAccountHolder).orElse(defaultZelleAccountHolder);
         String zelleQrUrl = settingOpt.map(PaymentGatewaySetting::getZelleQrImageUrl).orElse(defaultZelleQrImageUrl);
 
+        boolean vexpayEnabled = settingOpt.map(s -> s.getVexpayEnabled() != null ? s.getVexpayEnabled() : true).orElse(true);
+        boolean vexpayConfigured = vexPayProperties.isConfigured();
+
         return PaymentConfigResponse.builder()
                 .bcvRate(bcv.getRate())
                 .bcvLastUpdated(bcv.getLastUpdated())
@@ -101,6 +106,8 @@ public class PaymentConfigService {
                 .zelleEmail(zelleEmail)
                 .zelleAccountHolder(zelleHolder)
                 .zelleQrImageUrl(zelleQrUrl != null && !zelleQrUrl.isBlank() ? zelleQrUrl : null)
+                .vexpayEnabled(vexpayEnabled)
+                .vexpayConfigured(vexpayConfigured)
                 .build();
     }
 
@@ -141,6 +148,9 @@ public class PaymentConfigService {
         }
         if (request.getZelleAccountHolder() != null) {
             setting.setZelleAccountHolder(request.getZelleAccountHolder().trim());
+        }
+        if (request.getVexpayEnabled() != null) {
+            setting.setVexpayEnabled(request.getVexpayEnabled());
         }
 
         PaymentGatewaySetting saved = paymentGatewaySettingRepository.save(setting);
@@ -184,6 +194,7 @@ public class PaymentConfigService {
                 .zelleEmail(defaultZelleEmail)
                 .zelleAccountHolder(defaultZelleAccountHolder)
                 .zelleQrImageUrl(defaultZelleQrImageUrl != null && !defaultZelleQrImageUrl.isBlank() ? defaultZelleQrImageUrl : null)
+                .vexpayEnabled(true)
                 .build();
         return paymentGatewaySettingRepository.save(defaultSetting);
     }
@@ -205,6 +216,9 @@ public class PaymentConfigService {
                 .zelleEmail(s.getZelleEmail() != null ? s.getZelleEmail() : defaultZelleEmail)
                 .zelleAccountHolder(s.getZelleAccountHolder() != null ? s.getZelleAccountHolder() : defaultZelleAccountHolder)
                 .zelleQrImageUrl(s.getZelleQrImageUrl())
+                .vexpayEnabled(s.getVexpayEnabled() != null ? s.getVexpayEnabled() : true)
+                .vexpayConfigured(vexPayProperties.isConfigured())
+                .vexpayLivemode(vexPayProperties.isEffectiveLivemode())
                 .updatedAt(s.getUpdatedAt())
                 .build();
     }

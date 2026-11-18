@@ -61,6 +61,7 @@ public class SecurityConfig {
                                 "/api/v1/payments/binance-pay/webhook",
                                 "/api/v1/payments/binance-pay/mock-webhook",
                                 "/api/v1/payments/binance-pay/mock-checkout/**",
+                                "/api/v1/payments/vexpay/webhook",
                                 "/uploads/**",
                                 "/actuator/**",
                                 "/error"

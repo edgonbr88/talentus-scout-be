@@ -45,4 +45,7 @@ public class UpdatePaymentGatewaySettingsRequest {
     private String zelleEmail;
 
     private String zelleAccountHolder;
+
+    @Builder.Default
+    private Boolean vexpayEnabled = true;
 }

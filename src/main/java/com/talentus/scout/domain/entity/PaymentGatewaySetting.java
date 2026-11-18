@@ -77,6 +77,10 @@ public class PaymentGatewaySetting {
     @Column(name = "zelle_qr_image_url")
     private String zelleQrImageUrl;
 
+    @Column(name = "vexpay_enabled", nullable = false)
+    @Builder.Default
+    private Boolean vexpayEnabled = true;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private Instant createdAt;

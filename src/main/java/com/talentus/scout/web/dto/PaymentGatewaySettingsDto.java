@@ -30,5 +30,8 @@ public class PaymentGatewaySettingsDto {
     private String zelleEmail;
     private String zelleAccountHolder;
     private String zelleQrImageUrl;
+    private Boolean vexpayEnabled;
+    private Boolean vexpayConfigured;
+    private Boolean vexpayLivemode;
     private Instant updatedAt;
 }

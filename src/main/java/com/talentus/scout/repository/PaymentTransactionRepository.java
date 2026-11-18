@@ -11,6 +11,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Query;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -27,6 +28,16 @@ public interface PaymentTransactionRepository extends JpaRepository<PaymentTrans
     Optional<PaymentTransaction> findFirstByAthleteIdAndStatusOrderByCreatedAtDesc(UUID athleteId, PaymentStatus status);
 
     Optional<PaymentTransaction> findByGatewayOrderId(String gatewayOrderId);
+
+    Optional<PaymentTransaction> findByVexpaySessionId(String vexpaySessionId);
+
+    Optional<PaymentTransaction> findByVexpayPaymentId(String vexpayPaymentId);
+
+    List<PaymentTransaction> findByMethodAndStatusAndCreatedAtAfterOrderByCreatedAtAsc(
+            PaymentMethod method,
+            PaymentStatus status,
+            Instant after
+    );
 
     boolean existsByReferenceNumber(String referenceNumber);
 
