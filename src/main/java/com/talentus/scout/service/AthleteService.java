@@ -15,6 +15,7 @@ import com.talentus.scout.repository.AthleteRepository;
 import com.talentus.scout.repository.AthleteVideoRepository;
 import com.talentus.scout.repository.UserRepository;
 import com.talentus.scout.security.ScoutSecurity;
+import com.talentus.scout.util.AthleteFieldNormalizer;
 import com.talentus.scout.web.dto.AthleteResponse;
 import com.talentus.scout.web.dto.CreateAthleteRequest;
 import com.talentus.scout.web.dto.UpdateAthleteRequest;
@@ -78,11 +79,8 @@ public class AthleteService {
         User tutor = userRepository.findByEmail(tutorEmail)
                 .orElseThrow(() -> new UsernameNotFoundException("Tutor no encontrado con email: " + tutorEmail));
 
-        // Validación de edad: menores de 21 años
-        int age = Period.between(request.getBirthDate(), LocalDate.now()).getYears();
-        if (age > 21) {
-            throw new IllegalArgumentException("El atleta debe pertenecer a categorías formativas menores a 21 años (Edad actual: " + age + ")");
-        }
+        // Validación de fecha de nacimiento y edad en categorías formativas (4 a 21 años)
+        AthleteFieldNormalizer.validateBirthDateAndFormativeAge(request.getBirthDate());
 
         ClubOrganization club = null;
         if (request.getCurrentClubId() != null) {
@@ -361,9 +359,7 @@ public class AthleteService {
                         .build())
                 .collect(Collectors.toList());
 
-        int age = athlete.getBirthDate() != null
-                ? Period.between(athlete.getBirthDate(), LocalDate.now()).getYears()
-                : 0;
+        int age = AthleteFieldNormalizer.calculateSafeAge(athlete.getBirthDate());
 
         return PublicAthleteResponse.builder()
                 .id(athlete.getId())

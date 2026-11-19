@@ -48,7 +48,7 @@ class BulkImportServiceTemplateTest {
         try (Workbook wb = WorkbookFactory.create(new ByteArrayInputStream(xlsxBytes))) {
             Sheet sheet = wb.getSheetAt(0);
             List<? extends DataValidation> validations = sheet.getDataValidations();
-            assertEquals(5, validations.size(), "Debe incluir 5 listas desplegables (género, pos principal, pos secundaria, pie, nacionalidad)");
+            assertEquals(6, validations.size(), "Debe incluir 6 validaciones de datos (fecha_nacimiento prompt y 5 listas desplegables)");
         }
 
         List<BulkImportRowDto> parsed = parser.parseExcel(new ByteArrayInputStream(xlsxBytes));

@@ -66,9 +66,16 @@ class RegisterTutorTest {
                 "image/png",
                 "dummy image content".getBytes()
         );
+        MockMultipartFile selfieFile = new MockMultipartFile(
+                "selfieFile",
+                "selfie.png",
+                "image/png",
+                "dummy selfie content".getBytes()
+        );
 
         mockMvc.perform(multipart("/api/v1/auth/register-tutor")
                         .file(idFile)
+                        .file(selfieFile)
                         .param("fullName", "Mariana Gómez")
                         .param("email", testEmail)
                         .param("password", "PasswordSeguro2026*")
@@ -154,9 +161,16 @@ class RegisterTutorTest {
                 "image/png",
                 "dummy image content".getBytes()
         );
+        MockMultipartFile selfieFile = new MockMultipartFile(
+                "selfieFile",
+                "selfie.png",
+                "image/png",
+                "dummy selfie content".getBytes()
+        );
 
         mockMvc.perform(multipart("/api/v1/auth/register-tutor")
                         .file(idFile)
+                        .file(selfieFile)
                         .param("fullName", "Pedro Infante")
                         .param("email", testEmail)
                         .param("password", "PasswordSeguro2026*")
@@ -183,9 +197,16 @@ class RegisterTutorTest {
                 "image/png",
                 "dummy image content".getBytes()
         );
+        MockMultipartFile selfieFile = new MockMultipartFile(
+                "selfieFile",
+                "selfie.png",
+                "image/png",
+                "dummy selfie content".getBytes()
+        );
 
         mockMvc.perform(multipart("/api/v1/auth/register-tutor")
                         .file(idFile)
+                        .file(selfieFile)
                         .param("fullName", "Luisa Marín")
                         .param("email", testEmail)
                         .param("password", "PasswordSeguro2026*")
@@ -210,9 +231,16 @@ class RegisterTutorTest {
                 "image/png",
                 "dummy image content".getBytes()
         );
+        MockMultipartFile selfieFile = new MockMultipartFile(
+                "selfieFile",
+                "selfie.png",
+                "image/png",
+                "dummy selfie content".getBytes()
+        );
 
         mockMvc.perform(multipart("/api/v1/auth/register-tutor")
                         .file(idFile)
+                        .file(selfieFile)
                         .param("fullName", "Admin Duplicado")
                         .param("email", "admin@talentus.app") // Email ya registrado
                         .param("password", "PasswordSeguro2026*")
@@ -236,9 +264,16 @@ class RegisterTutorTest {
                 "image/png",
                 "dummy image content".getBytes()
         );
+        MockMultipartFile selfieFile = new MockMultipartFile(
+                "selfieFile",
+                "selfie.png",
+                "image/png",
+                "dummy selfie content".getBytes()
+        );
 
         mockMvc.perform(multipart("/api/v1/auth/register-tutor")
                         .file(idFile)
+                        .file(selfieFile)
                         .param("fullName", "Carlos Gardel")
                         .param("email", testEmail)
                         .param("password", "PasswordSeguro2026*")
@@ -265,9 +300,16 @@ class RegisterTutorTest {
                 "image/png",
                 "dummy image content".getBytes()
         );
+        MockMultipartFile selfieFile = new MockMultipartFile(
+                "selfieFile",
+                "selfie.png",
+                "image/png",
+                "dummy selfie content".getBytes()
+        );
 
         mockMvc.perform(multipart("/api/v1/auth/register-tutor")
                         .file(idFile)
+                        .file(selfieFile)
                         .param("fullName", "Andrés Bello")
                         .param("email", testEmail)
                         .param("password", "PasswordSeguro2026*")
@@ -293,9 +335,16 @@ class RegisterTutorTest {
                 "image/png",
                 "dummy image content".getBytes()
         );
+        MockMultipartFile selfieFile = new MockMultipartFile(
+                "selfieFile",
+                "selfie_bolivia.png",
+                "image/png",
+                "dummy selfie content".getBytes()
+        );
 
         mockMvc.perform(multipart("/api/v1/auth/register-tutor")
                         .file(idFile)
+                        .file(selfieFile)
                         .param("fullName", "Marcelo Martins")
                         .param("email", testEmail)
                         .param("password", "PasswordSeguro2026*")

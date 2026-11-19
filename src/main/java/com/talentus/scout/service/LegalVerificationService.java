@@ -13,6 +13,7 @@ import com.talentus.scout.web.dto.legal.LegalVerificationPendingItemResponse;
 import com.talentus.scout.web.dto.legal.LegalVerificationReviewResponse;
 import com.talentus.scout.web.dto.legal.ReviewLegalVerificationRequest;
 import com.talentus.scout.service.storage.FileStorageService;
+import com.talentus.scout.util.AthleteFieldNormalizer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -137,7 +138,7 @@ public class LegalVerificationService {
 
         Integer age = null;
         if (athlete.getBirthDate() != null) {
-            age = Period.between(athlete.getBirthDate(), LocalDate.now()).getYears();
+            age = AthleteFieldNormalizer.calculateSafeAge(athlete.getBirthDate());
         }
 
         String athleteDocUrl = (athlete.getIdentityDocumentFileUrl() != null && !athlete.getIdentityDocumentFileUrl().isBlank())

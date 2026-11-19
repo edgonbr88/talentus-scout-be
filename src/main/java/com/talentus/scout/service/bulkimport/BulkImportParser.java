@@ -167,6 +167,12 @@ public class BulkImportParser {
         LocalDate parsedBirthDate = parseDate(rawBirthDate);
         if (rawBirthDate != null && parsedBirthDate == null) {
             rowErrors.add("Formato de fecha inválido en 'fecha_nacimiento': '" + rawBirthDate + "' (use AAAA-MM-DD o DD/MM/AAAA)");
+        } else if (parsedBirthDate != null) {
+            try {
+                AthleteFieldNormalizer.validateBirthDateAndFormativeAge(parsedBirthDate);
+            } catch (IllegalArgumentException ex) {
+                rowErrors.add(ex.getMessage());
+            }
         }
 
         String genero = normalizeSafely(() -> AthleteFieldNormalizer.normalizeGender(clean(fieldExtractor.apply("genero"))), "MALE", rowErrors);

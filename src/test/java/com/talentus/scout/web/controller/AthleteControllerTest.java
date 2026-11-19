@@ -118,6 +118,46 @@ class AthleteControllerTest {
     }
 
     @Test
+    void createAthlete_WithFutureBirthDate_Returns400BadRequest() throws Exception {
+        String payload = """
+                {
+                    "firstName": "Atleta",
+                    "lastName": "Futuro",
+                    "birthDate": "2035-01-01",
+                    "primaryPosition": "DELANTERO",
+                    "preferredFoot": "DERECHO"
+                }
+                """;
+
+        mockMvc.perform(post("/api/v1/athletes")
+                        .header("Authorization", "Bearer " + tutorToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(payload))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void createAthlete_WithAgeUnder4_Returns400BadRequest() throws Exception {
+        java.time.LocalDate tooYoung = java.time.LocalDate.now().minusYears(2);
+        String payload = """
+                {
+                    "firstName": "Bebe",
+                    "lastName": "Atleta",
+                    "birthDate": "%s",
+                    "primaryPosition": "DELANTERO",
+                    "preferredFoot": "DERECHO"
+                }
+                """.formatted(tooYoung);
+
+        mockMvc.perform(post("/api/v1/athletes")
+                        .header("Authorization", "Bearer " + tutorToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(payload))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("BAD_REQUEST"));
+    }
+
+    @Test
     void athleteOwnership_IsolationBetweenTutors() throws Exception {
         // 1. Tutor 1 crea un atleta
         String createPayload = """

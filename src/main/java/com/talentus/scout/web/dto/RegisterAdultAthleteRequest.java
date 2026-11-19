@@ -4,6 +4,7 @@ import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Past;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -52,6 +53,7 @@ public class RegisterAdultAthleteRequest {
     private String address;
 
     @NotNull(message = "La fecha de nacimiento es obligatoria")
+    @Past(message = "La fecha de nacimiento debe ser anterior a la fecha actual")
     private LocalDate birthDate;
 
     @NotNull(message = "Debes aceptar los términos y condiciones")
