@@ -1,6 +1,7 @@
 package com.talentus.scout.web.exception;
 
 import com.talentus.scout.exception.AccountNotVerifiedException;
+import com.talentus.scout.exception.DuplicateTechnicalAnalysisException;
 import com.talentus.scout.exception.EmailAlreadyExistsException;
 import com.talentus.scout.exception.InvalidTokenException;
 import com.talentus.scout.exception.ResourceNotFoundException;
@@ -52,6 +53,15 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(com.talentus.scout.exception.DuplicatePaymentReferenceException.class)
     public ResponseEntity<Map<String, Object>> handleDuplicatePaymentReference(com.talentus.scout.exception.DuplicatePaymentReferenceException ex) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("error", "CONFLICT");
+        body.put("message", ex.getMessage());
+        body.put("timestamp", Instant.now().toString());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(body);
+    }
+
+    @ExceptionHandler(DuplicateTechnicalAnalysisException.class)
+    public ResponseEntity<Map<String, Object>> handleDuplicateTechnicalAnalysis(DuplicateTechnicalAnalysisException ex) {
         Map<String, Object> body = new HashMap<>();
         body.put("error", "CONFLICT");
         body.put("message", ex.getMessage());
