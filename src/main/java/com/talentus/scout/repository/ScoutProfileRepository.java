@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -17,6 +18,8 @@ import java.util.UUID;
 public interface ScoutProfileRepository extends JpaRepository<ScoutProfile, UUID> {
 
     Optional<ScoutProfile> findByUserId(UUID userId);
+
+    List<ScoutProfile> findByUserIdIn(Collection<UUID> userIds);
 
     @Query("SELECT s FROM ScoutProfile s WHERE LOWER(s.user.email) = LOWER(:email)")
     Optional<ScoutProfile> findByUserEmail(@Param("email") String email);
