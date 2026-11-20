@@ -1,6 +1,8 @@
 package com.talentus.scout.util;
 
 import java.text.Normalizer;
+import java.time.LocalDate;
+import java.time.Period;
 import java.util.*;
 
 /**
@@ -30,6 +32,9 @@ public final class AthleteFieldNormalizer {
     public static final List<String> AUTHORIZED_COUNTRIES = List.of(
             "Venezuela", "Colombia", "Chile", "Perú", "Ecuador", "Bolivia"
     );
+
+    public static final int MIN_FORMATIVE_AGE = 4;
+    public static final int MAX_FORMATIVE_AGE = 21;
 
     private static final Set<String> EMPTY_MARKERS = Set.of(
             "", "NINGUNA", "NINGUNO", "NO APLICA", "N/A", "NA", "-", "NULL"
@@ -311,5 +316,47 @@ public final class AthleteFieldNormalizer {
             }
         }
         return sb.toString();
+    }
+
+    /**
+     * Valida que la fecha de nacimiento no sea nula, no sea futura ni igual a hoy,
+     * y pertenezca al rango de edades formativas permitidas (4 a 21 años).
+     */
+    public static void validateBirthDateAndFormativeAge(LocalDate birthDate) {
+        if (birthDate == null) {
+            throw new IllegalArgumentException("La fecha de nacimiento es obligatoria");
+        }
+        if (!birthDate.isBefore(LocalDate.now())) {
+            throw new IllegalArgumentException("La fecha de nacimiento no puede ser futura ni igual a la fecha actual (Fecha recibida: " + birthDate + ")");
+        }
+        int age = Period.between(birthDate, LocalDate.now()).getYears();
+        if (age < MIN_FORMATIVE_AGE) {
+            throw new IllegalArgumentException("El atleta debe tener al menos " + MIN_FORMATIVE_AGE + " años de edad (Edad calculada: " + age + " años)");
+        }
+        if (age > MAX_FORMATIVE_AGE) {
+            throw new IllegalArgumentException("El atleta debe pertenecer a categorías formativas de hasta " + MAX_FORMATIVE_AGE + " años (Edad actual: " + age + " años)");
+        }
+    }
+
+    /**
+     * Valida que la fecha de nacimiento no sea nula y sea estrictamente anterior a la fecha actual.
+     */
+    public static void validateBirthDateInPast(LocalDate birthDate) {
+        if (birthDate == null) {
+            throw new IllegalArgumentException("La fecha de nacimiento es obligatoria");
+        }
+        if (!birthDate.isBefore(LocalDate.now())) {
+            throw new IllegalArgumentException("La fecha de nacimiento no puede ser futura ni igual a la fecha actual");
+        }
+    }
+
+    /**
+     * Calcula la edad de forma segura y defensiva, garantizando que nunca retorne valores negativos.
+     */
+    public static int calculateSafeAge(LocalDate birthDate) {
+        if (birthDate == null || !birthDate.isBefore(LocalDate.now())) {
+            return 0;
+        }
+        return Math.max(0, Period.between(birthDate, LocalDate.now()).getYears());
     }
 }

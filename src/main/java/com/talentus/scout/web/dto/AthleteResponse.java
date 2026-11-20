@@ -2,6 +2,7 @@ package com.talentus.scout.web.dto;
 
 import com.talentus.scout.domain.entity.Athlete;
 import com.talentus.scout.domain.enums.LegalVerificationStatus;
+import com.talentus.scout.util.AthleteFieldNormalizer;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -67,7 +68,7 @@ public class AthleteResponse {
             this.fullName = athlete.getFirstName() + " " + athlete.getLastName();
             this.birthDate = athlete.getBirthDate();
             if (athlete.getBirthDate() != null) {
-                this.age = Period.between(athlete.getBirthDate(), LocalDate.now()).getYears();
+                this.age = AthleteFieldNormalizer.calculateSafeAge(athlete.getBirthDate());
             }
             this.gender = athlete.getGender();
             this.primaryPosition = athlete.getPrimaryPosition();

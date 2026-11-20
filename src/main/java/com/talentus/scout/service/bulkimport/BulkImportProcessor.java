@@ -92,6 +92,20 @@ public class BulkImportProcessor {
                     continue;
                 }
 
+                // 1.1 Validación de fecha de nacimiento y rango de edad formativo (4 a 21 años)
+                try {
+                    AthleteFieldNormalizer.validateBirthDateAndFormativeAge(row.getFechaNacimiento());
+                } catch (IllegalArgumentException ex) {
+                    warnings.add(BulkImportRowErrorDto.builder()
+                            .rowNumber(row.getRowNumber())
+                            .athleteName(row.getPrimerNombre() + " " + row.getPrimerApellido())
+                            .reason(ex.getMessage())
+                            .actionTaken("FILA_OMITIDA")
+                            .build());
+                    job.setFailedRows(job.getFailedRows() + 1);
+                    continue;
+                }
+
                 // 2. Control de duplicados de atleta
                 boolean duplicateFound = false;
                 if (row.getCedulaIdentidadAtleta() != null && !row.getCedulaIdentidadAtleta().isBlank()) {

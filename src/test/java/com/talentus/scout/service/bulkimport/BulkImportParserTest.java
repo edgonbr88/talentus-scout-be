@@ -106,4 +106,57 @@ class BulkImportParserTest {
                 parser.parseCsv(new ByteArrayInputStream(invalidCsv.getBytes(StandardCharsets.UTF_8)))
         );
     }
+
+    @Test
+    void testFutureBirthDateProducesRowValidationError() throws Exception {
+        String csvContent = "primer_nombre,segundo_nombre,primer_apellido,segundo_apellido,cedula_identidad_atleta,fecha_nacimiento,genero,posicion_principal,posicion_secundaria,pie_dominante,nacionalidad,altura_cm,peso_kg,nombre_completo_tutor,cedula_identidad_tutor,correo_tutor,telefono_tutor\n" +
+                "Futuro,,Atleta,,V-34111222,2035-05-14,MALE,Delantero Centro,,Derecho,Venezuela,160,55,Tutor Legal,V-12345678,tutor@mail.com,+584121112233\n";
+
+        List<BulkImportRowDto> rows = parser.parseCsv(new ByteArrayInputStream(csvContent.getBytes(StandardCharsets.UTF_8)));
+        assertEquals(1, rows.size());
+        assertNotNull(rows.get(0).getValidationError());
+        assertTrue(rows.get(0).getValidationError().contains("La fecha de nacimiento no puede ser futura"));
+    }
+
+    @Test
+    void testTodayBirthDateProducesRowValidationError() throws Exception {
+        java.time.LocalDate today = java.time.LocalDate.now();
+        String csvContent = "primer_nombre,segundo_nombre,primer_apellido,segundo_apellido,cedula_identidad_atleta,fecha_nacimiento,genero,posicion_principal,posicion_secundaria,pie_dominante,nacionalidad,altura_cm,peso_kg,nombre_completo_tutor,cedula_identidad_tutor,correo_tutor,telefono_tutor\n" +
+                "Recien,,Nacido,,V-34111223," + today + ",MALE,Delantero Centro,,Derecho,Venezuela,160,55,Tutor Legal,V-12345678,tutor@mail.com,+584121112233\n";
+
+        List<BulkImportRowDto> rows = parser.parseCsv(new ByteArrayInputStream(csvContent.getBytes(StandardCharsets.UTF_8)));
+        assertEquals(1, rows.size());
+        assertNotNull(rows.get(0).getValidationError());
+        assertTrue(rows.get(0).getValidationError().contains("La fecha de nacimiento no puede ser futura ni igual a la fecha actual"));
+    }
+
+    @Test
+    void testAgeOutOfFormativeRangeProducesRowValidationError() throws Exception {
+        java.time.LocalDate tooYoung = java.time.LocalDate.now().minusYears(2);
+        java.time.LocalDate tooOld = java.time.LocalDate.now().minusYears(23);
+
+        String csvContent = "primer_nombre,segundo_nombre,primer_apellido,segundo_apellido,cedula_identidad_atleta,fecha_nacimiento,genero,posicion_principal,posicion_secundaria,pie_dominante,nacionalidad,altura_cm,peso_kg,nombre_completo_tutor,cedula_identidad_tutor,correo_tutor,telefono_tutor\n" +
+                "Bebe,,Jugador,,V-34111224," + tooYoung + ",MALE,Delantero Centro,,Derecho,Venezuela,160,55,Tutor Legal,V-12345678,tutor@mail.com,+584121112233\n" +
+                "Veterano,,Jugador,,V-34111225," + tooOld + ",MALE,Delantero Centro,,Derecho,Venezuela,160,55,Tutor Legal,V-12345678,tutor@mail.com,+584121112233\n";
+
+        List<BulkImportRowDto> rows = parser.parseCsv(new ByteArrayInputStream(csvContent.getBytes(StandardCharsets.UTF_8)));
+        assertEquals(2, rows.size());
+        assertNotNull(rows.get(0).getValidationError());
+        assertTrue(rows.get(0).getValidationError().contains("al menos 4 años de edad"));
+
+        assertNotNull(rows.get(1).getValidationError());
+        assertTrue(rows.get(1).getValidationError().contains("categorías formativas de hasta 21 años"));
+    }
+
+    @Test
+    void testValidYouthAthlete18To21ParsedSuccessfully() throws Exception {
+        java.time.LocalDate youthAge19 = java.time.LocalDate.now().minusYears(19).minusDays(10);
+        String csvContent = "primer_nombre,segundo_nombre,primer_apellido,segundo_apellido,cedula_identidad_atleta,fecha_nacimiento,genero,posicion_principal,posicion_secundaria,pie_dominante,nacionalidad,altura_cm,peso_kg,nombre_completo_tutor,cedula_identidad_tutor,correo_tutor,telefono_tutor\n" +
+                "Juvenil,,Mayor,,V-34111226," + youthAge19 + ",MALE,Delantero Centro,,Derecho,Venezuela,178,72,Tutor Legal,V-12345678,tutor@mail.com,+584121112233\n";
+
+        List<BulkImportRowDto> rows = parser.parseCsv(new ByteArrayInputStream(csvContent.getBytes(StandardCharsets.UTF_8)));
+        assertEquals(1, rows.size());
+        assertNull(rows.get(0).getValidationError());
+        assertEquals("Juvenil", rows.get(0).getPrimerNombre());
+    }
 }

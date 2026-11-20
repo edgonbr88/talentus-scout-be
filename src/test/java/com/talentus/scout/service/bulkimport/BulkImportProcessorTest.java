@@ -176,4 +176,38 @@ class BulkImportProcessorTest {
         assertEquals(1, job.getFailedRows());
         assertTrue(job.getErrorReportJson().contains("Posición inválida"));
     }
+
+    @Test
+    void testRowWithFutureBirthDateIsOmittedAndRecordedInWarnings() {
+        UUID jobId = UUID.randomUUID();
+        User scout = User.builder().id(UUID.randomUUID()).email("scout@club.com").fullName("Scout Master").build();
+        BulkImportJob job = BulkImportJob.builder()
+                .id(jobId)
+                .scout(scout)
+                .organizationName("Academia Test")
+                .sourceType(BulkImportSourceType.FILE_CSV)
+                .status(BulkImportStatus.PENDING)
+                .build();
+
+        when(jobRepository.findById(jobId)).thenReturn(Optional.of(job));
+        when(jobRepository.save(any(BulkImportJob.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        BulkImportRowDto futureRow = BulkImportRowDto.builder()
+                .rowNumber(2)
+                .primerNombre("Futuro")
+                .primerApellido("Atleta")
+                .fechaNacimiento(LocalDate.now().plusYears(10))
+                .genero("MALE")
+                .posicionPrincipal("Delantero Centro")
+                .nombreCompletoTutor("Tutor")
+                .correoTutor("tutor@ejemplo.com")
+                .build();
+
+        processor.processImportJob(jobId, List.of(futureRow));
+
+        verify(athleteRepository, never()).save(any(Athlete.class));
+        assertEquals(0, job.getSuccessfulRows());
+        assertEquals(1, job.getFailedRows());
+        assertTrue(job.getErrorReportJson().contains("La fecha de nacimiento no puede ser futura"));
+    }
 }

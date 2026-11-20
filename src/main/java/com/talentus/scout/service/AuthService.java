@@ -310,7 +310,11 @@ public class AuthService {
 
     @Transactional
     public RegisterAdultAthleteResponse registerAdultAthlete(RegisterAdultAthleteRequest request, String ipAddress, String userAgent) {
-        if (request.getBirthDate() == null || Period.between(request.getBirthDate(), LocalDate.now()).getYears() < 18) {
+        if (request.getBirthDate() == null || !request.getBirthDate().isBefore(LocalDate.now())) {
+            throw new IllegalArgumentException("La fecha de nacimiento no puede ser futura ni igual a la fecha actual");
+        }
+        int age = Period.between(request.getBirthDate(), LocalDate.now()).getYears();
+        if (age < 18) {
             throw new IllegalArgumentException("El registro directo de atleta requiere tener al menos 18 años cumplidos. Si eres menor de edad, tu registro debe ser gestionado por tu tutor legal.");
         }
 

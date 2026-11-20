@@ -267,6 +267,8 @@ public class BulkImportService {
             }
 
             // Listas desplegables (Validación de Datos en Excel para minimizar errores de escritura)
+            addPromptValidation(sheet, 5,
+                    "Fecha de Nacimiento", "Formato AAAA-MM-DD o DD/MM/AAAA. Obligatorio fecha en el pasado (edad formativa entre 4 y 21 años).");
             addDropdownValidation(sheet, 6, AthleteFieldNormalizer.CANONICAL_GENDERS_DISPLAY,
                     "Género", "Selecciona Masculino o Femenino");
             addDropdownValidation(sheet, 7, AthleteFieldNormalizer.CANONICAL_POSITIONS,
@@ -287,6 +289,17 @@ public class BulkImportService {
         } catch (Exception e) {
             throw new RuntimeException("Error al crear plantilla Excel: " + e.getMessage());
         }
+    }
+
+    private void addPromptValidation(Sheet sheet, int colIndex, String title, String message) {
+        DataValidationHelper helper = sheet.getDataValidationHelper();
+        DataValidationConstraint constraint = helper.createCustomConstraint("TRUE");
+        CellRangeAddressList addressList = new CellRangeAddressList(1, 1000, colIndex, colIndex);
+        DataValidation validation = helper.createValidation(constraint, addressList);
+        validation.setShowPromptBox(true);
+        validation.createPromptBox(title, message);
+        validation.setShowErrorBox(false);
+        sheet.addValidationData(validation);
     }
 
     private void addDropdownValidation(Sheet sheet, int colIndex, List<String> options, String title, String message) {

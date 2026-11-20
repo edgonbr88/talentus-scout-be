@@ -17,6 +17,7 @@ import com.talentus.scout.domain.enums.BadgeType;
 import com.talentus.scout.exception.ResourceNotFoundException;
 import com.talentus.scout.repository.AthleteBadgeRepository;
 import com.talentus.scout.repository.AthleteRepository;
+import com.talentus.scout.util.AthleteFieldNormalizer;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -158,8 +159,9 @@ public class AthleteCvPdfService {
         identityCell.addElement(namePara);
 
         // Subtítulo con Posición Principal y Categoría
-        int birthYear = athlete.getBirthDate() != null ? athlete.getBirthDate().getYear() : 0;
-        int age = athlete.getBirthDate() != null ? Period.between(athlete.getBirthDate(), LocalDate.now()).getYears() : 0;
+        int birthYear = (athlete.getBirthDate() != null && athlete.getBirthDate().isBefore(LocalDate.now()))
+                ? athlete.getBirthDate().getYear() : 0;
+        int age = AthleteFieldNormalizer.calculateSafeAge(athlete.getBirthDate());
 
         Font posFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 10f, COLOR_VOLT_EMERALD);
         String categoryText = birthYear > 0 ? "Categoría Sub-" + (LocalDate.now().getYear() - birthYear) + " (Año " + birthYear + ")" : "Categoría Formativa";

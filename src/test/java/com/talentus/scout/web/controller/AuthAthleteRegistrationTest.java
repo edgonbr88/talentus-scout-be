@@ -222,4 +222,42 @@ class AuthAthleteRegistrationTest {
                         .content("{\"firstName\":\"Segundo\",\"lastName\":\"Atleta\",\"birthDate\":\"2010-01-01\",\"primaryPosition\":\"DEFENSA\",\"preferredFoot\":\"IZQUIERDO\"}"))
                 .andExpect(status().isForbidden());
     }
+
+    @Test
+    void testRegisterAdultAthleteFutureBirthDateFails() throws Exception {
+        String email = "future.athlete." + System.currentTimeMillis() + "@test.com";
+
+        mockMvc.perform(multipart("/api/v1/auth/register-athlete")
+                        .param("fullName", "Atleta del Futuro")
+                        .param("email", email)
+                        .param("password", "Password123!")
+                        .param("phoneNumber", "+584141234567")
+                        .param("birthDate", "2035-05-14")
+                        .param("primaryPosition", "DELANTERO")
+                        .param("preferredFoot", "DERECHO")
+                        .param("acceptTerms", "true")
+                        .param("acceptInstitutionalDiffusion", "true"))
+                .andExpect(status().isBadRequest());
+
+        assertFalse(userRepository.findByEmail(email).isPresent(), "No debió crearse usuario para fecha futura");
+    }
+
+    @Test
+    void testRegisterAdultAthleteTodayBirthDateFails() throws Exception {
+        String email = "today.athlete." + System.currentTimeMillis() + "@test.com";
+
+        mockMvc.perform(multipart("/api/v1/auth/register-athlete")
+                        .param("fullName", "Atleta de Hoy")
+                        .param("email", email)
+                        .param("password", "Password123!")
+                        .param("phoneNumber", "+584141234567")
+                        .param("birthDate", LocalDate.now().toString())
+                        .param("primaryPosition", "DELANTERO")
+                        .param("preferredFoot", "DERECHO")
+                        .param("acceptTerms", "true")
+                        .param("acceptInstitutionalDiffusion", "true"))
+                .andExpect(status().isBadRequest());
+
+        assertFalse(userRepository.findByEmail(email).isPresent(), "No debió crearse usuario para fecha actual");
+    }
 }
