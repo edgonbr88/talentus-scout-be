@@ -72,6 +72,9 @@ public class ScoutDirectoryService {
                 .orElse(publicRadarSpec);
 
         if (criteria != null) {
+            if (criteria.getQuery() != null && !criteria.getQuery().isBlank()) {
+                spec = spec.and(AthleteSpecifications.withSearchQuery(criteria.getQuery()));
+            }
             if (criteria.getBirthYearFrom() != null || criteria.getBirthYearTo() != null) {
                 spec = spec.and(AthleteSpecifications.withBirthYearRange(criteria.getBirthYearFrom(), criteria.getBirthYearTo()));
             } else if (criteria.getBirthYear() != null) {
@@ -94,6 +97,12 @@ public class ScoutDirectoryService {
             }
             if (criteria.getResidenceCountry() != null && !criteria.getResidenceCountry().isBlank()) {
                 spec = spec.and(AthleteSpecifications.withResidenceCountry(criteria.getResidenceCountry()));
+            }
+            if (criteria.getMinHeightCm() != null || criteria.getMaxHeightCm() != null) {
+                spec = spec.and(AthleteSpecifications.withHeightRange(criteria.getMinHeightCm(), criteria.getMaxHeightCm()));
+            }
+            if (criteria.getMinWeightKg() != null || criteria.getMaxWeightKg() != null) {
+                spec = spec.and(AthleteSpecifications.withWeightRange(criteria.getMinWeightKg(), criteria.getMaxWeightKg()));
             }
         }
 
@@ -151,6 +160,8 @@ public class ScoutDirectoryService {
                 .primaryPosition(athlete.getPrimaryPosition())
                 .secondaryPosition(athlete.getSecondaryPosition())
                 .preferredFoot(athlete.getPreferredFoot())
+                .heightCm(athlete.getHeightCm())
+                .weightKg(athlete.getWeightKg())
                 .nationality(athlete.getNationality())
                 .secondaryPassports(athlete.getSecondaryPassports())
                 .hasEuropeanPassport(hasEuropeanPassport)

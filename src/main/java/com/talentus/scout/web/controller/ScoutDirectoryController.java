@@ -17,6 +17,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
@@ -38,6 +39,7 @@ public class ScoutDirectoryController {
     @GetMapping("/directory")
     @PreAuthorize("hasAnyRole('SCOUT', 'ADMIN') and @scoutSecurity.isVerifiedScout(authentication)")
     public ResponseEntity<Page<ScoutDirectoryAthleteItem>> getScoutDirectory(
+            @RequestParam(required = false) String query,
             @RequestParam(required = false) Integer birthYear,
             @RequestParam(required = false) Integer birthYearFrom,
             @RequestParam(required = false) Integer birthYearTo,
@@ -47,10 +49,15 @@ public class ScoutDirectoryController {
             @RequestParam(required = false) Boolean hasEuropeanPassport,
             @RequestParam(required = false) Boolean hasVideo,
             @RequestParam(required = false) String residenceCountry,
+            @RequestParam(required = false) BigDecimal minHeightCm,
+            @RequestParam(required = false) BigDecimal maxHeightCm,
+            @RequestParam(required = false) BigDecimal minWeightKg,
+            @RequestParam(required = false) BigDecimal maxWeightKg,
             @PageableDefault(page = 0, size = 12, sort = "updatedAt", direction = Sort.Direction.DESC) Pageable pageable,
             Authentication authentication
     ) {
         AthleteFilterCriteria criteria = AthleteFilterCriteria.builder()
+                .query(query)
                 .birthYear(birthYear)
                 .birthYearFrom(birthYearFrom)
                 .birthYearTo(birthYearTo)
@@ -60,6 +67,10 @@ public class ScoutDirectoryController {
                 .hasEuropeanPassport(hasEuropeanPassport)
                 .hasVideo(hasVideo)
                 .residenceCountry(residenceCountry)
+                .minHeightCm(minHeightCm)
+                .maxHeightCm(maxHeightCm)
+                .minWeightKg(minWeightKg)
+                .maxWeightKg(maxWeightKg)
                 .build();
 
         Page<ScoutDirectoryAthleteItem> result = scoutDirectoryService.searchDirectory(criteria, pageable, authentication);

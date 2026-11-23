@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.UUID;
@@ -25,6 +26,8 @@ public class ScoutDirectoryAthleteItem {
     private String primaryPosition;
     private String secondaryPosition;
     private String preferredFoot;
+    private BigDecimal heightCm;
+    private BigDecimal weightKg;
     private String nationality;
     private String secondaryPassports;
     private boolean hasEuropeanPassport;

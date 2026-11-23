@@ -630,4 +630,142 @@ class ScoutDirectoryIntegrationTest {
                         .header("Authorization", "Bearer " + approvedScoutToken))
                 .andExpect(status().isNotFound());
     }
+
+    @Test
+    void shouldSearchByQueryOnNameFullNameAndClubAndIncludeIndependentAthletes() throws Exception {
+        long time = System.currentTimeMillis();
+        Athlete independentAthlete = Athlete.builder()
+                .tutor(athleteStriker2010.getTutor())
+                .firstName("Gabriel")
+                .lastName("Independiente " + time)
+                .birthDate(LocalDate.of(2009, 4, 12))
+                .primaryPosition("PORTERO")
+                .preferredFoot("DIESTRO")
+                .nationality("Venezolana")
+                .currentClub(null)
+                .heightCm(new BigDecimal("181.50"))
+                .weightKg(new BigDecimal("74.00"))
+                .slug("gabriel-independiente-" + time)
+                .isPublic(true)
+                .legalVerificationStatus(LegalVerificationStatus.APPROVED)
+                .build();
+        independentAthlete = athleteRepository.save(independentAthlete);
+
+        SubscriptionPlan activePlan = subscriptionPlanRepository.findById("PLAN_PRO_YEARLY")
+                .orElseGet(() -> subscriptionPlanRepository.findAll().stream().findFirst().orElse(null));
+        if (activePlan != null) {
+            athleteSubscriptionRepository.save(AthleteSubscription.builder()
+                    .athlete(independentAthlete)
+                    .plan(activePlan)
+                    .status(SubscriptionStatus.ACTIVE)
+                    .startDate(java.time.Instant.now().minus(1, java.time.temporal.ChronoUnit.DAYS))
+                    .endDate(java.time.Instant.now().plus(30, java.time.temporal.ChronoUnit.DAYS))
+                    .build());
+        }
+
+        // Búsqueda por nombre (case-insensitive)
+        mockMvc.perform(get("/api/v1/scouts/directory")
+                        .param("query", "alejandro")
+                        .header("Authorization", "Bearer " + approvedScoutToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[*].slug", hasItem(athleteStriker2010.getSlug())))
+                .andExpect(jsonPath("$.content[*].slug", not(hasItem(athleteDefender2008.getSlug()))));
+
+        // Búsqueda por nombre completo ("firstName lastName")
+        mockMvc.perform(get("/api/v1/scouts/directory")
+                        .param("query", "Alejandro Gómez")
+                        .header("Authorization", "Bearer " + approvedScoutToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[*].slug", hasItem(athleteStriker2010.getSlug())));
+
+        // Búsqueda por nombre de club
+        mockMvc.perform(get("/api/v1/scouts/directory")
+                        .param("query", "Academia Sin Escudo")
+                        .header("Authorization", "Bearer " + approvedScoutToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[*].slug", hasItem(athleteWithoutLogo.getSlug())))
+                .andExpect(jsonPath("$.content[*].slug", not(hasItem(athleteStriker2010.getSlug()))));
+
+        // Búsqueda por atleta independiente (sin club - LEFT JOIN)
+        mockMvc.perform(get("/api/v1/scouts/directory")
+                        .param("query", "Gabriel Independiente")
+                        .header("Authorization", "Bearer " + approvedScoutToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[*].slug", hasItem(independentAthlete.getSlug())));
+    }
+
+    @Test
+    void shouldFilterByHeightAndWeightRangesAndExposeMetrics() throws Exception {
+        long time = System.currentTimeMillis();
+        Athlete tallAthlete = Athlete.builder()
+                .tutor(athleteStriker2010.getTutor())
+                .firstName("Diego")
+                .lastName("Torres " + time)
+                .birthDate(LocalDate.of(2009, 7, 1))
+                .primaryPosition("DEFENSA_CENTRAL")
+                .preferredFoot("DIESTRO")
+                .nationality("Venezolana")
+                .currentClub(clubCaracas)
+                .heightCm(new BigDecimal("185.00"))
+                .weightKg(new BigDecimal("76.00"))
+                .slug("diego-torres-" + time)
+                .isPublic(true)
+                .legalVerificationStatus(LegalVerificationStatus.APPROVED)
+                .build();
+        tallAthlete = athleteRepository.save(tallAthlete);
+
+        SubscriptionPlan activePlan = subscriptionPlanRepository.findById("PLAN_PRO_YEARLY")
+                .orElseGet(() -> subscriptionPlanRepository.findAll().stream().findFirst().orElse(null));
+        if (activePlan != null) {
+            athleteSubscriptionRepository.save(AthleteSubscription.builder()
+                    .athlete(tallAthlete)
+                    .plan(activePlan)
+                    .status(SubscriptionStatus.ACTIVE)
+                    .startDate(java.time.Instant.now().minus(1, java.time.temporal.ChronoUnit.DAYS))
+                    .endDate(java.time.Instant.now().plus(30, java.time.temporal.ChronoUnit.DAYS))
+                    .build());
+        }
+
+        // Sin filtros biométricos: atleta con height/weight NULL sigue apareciendo y métricas se exponen en el JSON
+        mockMvc.perform(get("/api/v1/scouts/directory")
+                        .header("Authorization", "Bearer " + approvedScoutToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[*].slug", hasItem(athleteDefender2008.getSlug())))
+                .andExpect(jsonPath("$.content[?(@.slug=='" + athleteStriker2010.getSlug() + "')].heightCm", hasItem(172.0)))
+                .andExpect(jsonPath("$.content[?(@.slug=='" + athleteStriker2010.getSlug() + "')].weightKg", hasItem(60.0)));
+
+        // Filtro por estatura (170 - 175 cm)
+        mockMvc.perform(get("/api/v1/scouts/directory")
+                        .param("minHeightCm", "170")
+                        .param("maxHeightCm", "175")
+                        .header("Authorization", "Bearer " + approvedScoutToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[*].slug", hasItem(athleteStriker2010.getSlug())))
+                .andExpect(jsonPath("$.content[*].slug", not(hasItem(tallAthlete.getSlug()))))
+                .andExpect(jsonPath("$.content[*].slug", not(hasItem(athleteDefender2008.getSlug()))));
+
+        // Filtro por peso con min > max (78 y 70 -> intercambio automático a 70..78 kg)
+        mockMvc.perform(get("/api/v1/scouts/directory")
+                        .param("minWeightKg", "78")
+                        .param("maxWeightKg", "70")
+                        .header("Authorization", "Bearer " + approvedScoutToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[*].slug", hasItem(tallAthlete.getSlug())))
+                .andExpect(jsonPath("$.content[*].slug", not(hasItem(athleteStriker2010.getSlug()))));
+    }
+
+    @Test
+    void shouldHandleOutOfRangeBirthYearSafely() throws Exception {
+        mockMvc.perform(get("/api/v1/scouts/directory")
+                        .param("birthYear", "0")
+                        .header("Authorization", "Bearer " + approvedScoutToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content", is(empty())));
+
+        mockMvc.perform(get("/api/v1/scouts/directory")
+                        .param("birthYearFrom", "99999")
+                        .header("Authorization", "Bearer " + approvedScoutToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content", is(empty())));
+    }
 }
