@@ -16,6 +16,8 @@ import com.talentus.scout.util.AthleteFieldNormalizer;
 import com.talentus.scout.web.dto.bulkimport.BulkImportJobResponseDto;
 import com.talentus.scout.web.dto.bulkimport.BulkImportRowDto;
 import com.talentus.scout.web.dto.bulkimport.BulkImportRowErrorDto;
+import com.talentus.scout.web.dto.bulkimport.ScoutIndividualAthleteRequest;
+import com.talentus.scout.web.dto.bulkimport.ScoutIndividualAthleteResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.csv.CSVFormat;
@@ -54,25 +56,10 @@ public class BulkImportService {
             throw new IllegalArgumentException("Debe seleccionar un archivo válido para importar");
         }
 
-        User scoutUser = userRepository.findById(scoutUserId)
-                .orElseThrow(() -> new IllegalArgumentException("Usuario scout no encontrado"));
-
-        Optional<ScoutProfile> optProfile = scoutProfileRepository.findByUserId(scoutUserId);
-        if (scoutUser.getRole() == com.talentus.scout.domain.enums.UserRole.ADMIN) {
-            throw new org.springframework.security.access.AccessDeniedException(
-                    "El rol Administrador no tiene permitido realizar operaciones de carga masiva de atletas."
-            );
-        }
-        if (optProfile.isEmpty() || !optProfile.get().isBulkImportEnabled()) {
-            throw new org.springframework.security.access.AccessDeniedException(
-                    "Tu perfil de scout no tiene habilitada la funcionalidad de carga masiva. Contacta al administrador."
-            );
-        }
-        String orgName = optProfile.map(ScoutProfile::getOrganizationName).orElse("Organización Deportiva");
-        ClubOrganization club = null;
-        if (optProfile.isPresent()) {
-            club = clubOrganizationRepository.findByNameIgnoreCase(orgName).orElse(null);
-        }
+        ScoutContext context = validateAndResolveScoutContext(scoutUserId);
+        User scoutUser = context.scoutUser();
+        String orgName = context.organizationName();
+        ClubOrganization club = context.club();
 
         String filename = file.getOriginalFilename() != null ? file.getOriginalFilename().toLowerCase() : "";
         BulkImportSourceType sourceType = filename.endsWith(".csv") ? BulkImportSourceType.FILE_CSV : BulkImportSourceType.FILE_EXCEL;
@@ -112,25 +99,10 @@ public class BulkImportService {
 
     @Transactional
     public BulkImportJobResponseDto startGoogleSheetJob(UUID scoutUserId, String sheetUrlOrId) {
-        User scoutUser = userRepository.findById(scoutUserId)
-                .orElseThrow(() -> new IllegalArgumentException("Usuario scout no encontrado"));
-
-        Optional<ScoutProfile> optProfile = scoutProfileRepository.findByUserId(scoutUserId);
-        if (scoutUser.getRole() == com.talentus.scout.domain.enums.UserRole.ADMIN) {
-            throw new org.springframework.security.access.AccessDeniedException(
-                    "El rol Administrador no tiene permitido realizar operaciones de carga masiva de atletas."
-            );
-        }
-        if (optProfile.isEmpty() || !optProfile.get().isBulkImportEnabled()) {
-            throw new org.springframework.security.access.AccessDeniedException(
-                    "Tu perfil de scout no tiene habilitada la funcionalidad de carga masiva. Contacta al administrador."
-            );
-        }
-        String orgName = optProfile.map(ScoutProfile::getOrganizationName).orElse("Organización Deportiva");
-        ClubOrganization club = null;
-        if (optProfile.isPresent()) {
-            club = clubOrganizationRepository.findByNameIgnoreCase(orgName).orElse(null);
-        }
+        ScoutContext context = validateAndResolveScoutContext(scoutUserId);
+        User scoutUser = context.scoutUser();
+        String orgName = context.organizationName();
+        ClubOrganization club = context.club();
 
         List<BulkImportRowDto> rows;
         String sheetId = googleSheetsService.extractSheetId(sheetUrlOrId);
@@ -161,6 +133,79 @@ public class BulkImportService {
         scheduleAsyncProcessing(job.getId(), rows);
 
         return mapToResponseDto(job);
+    }
+
+    @Transactional
+    public ScoutIndividualAthleteResponse registerIndividualAthlete(
+            UUID scoutUserId,
+            ScoutIndividualAthleteRequest request
+    ) {
+        ScoutContext context = validateAndResolveScoutContext(scoutUserId);
+
+        String normalizedGender = (request.getGenero() != null && !request.getGenero().isBlank())
+                ? AthleteFieldNormalizer.normalizeGender(request.getGenero())
+                : "MALE";
+        String normalizedPrimaryPosition = AthleteFieldNormalizer.normalizePosition(request.getPosicionPrincipal(), true);
+        String normalizedSecondaryPosition = (request.getPosicionSecundaria() != null && !request.getPosicionSecundaria().isBlank())
+                ? AthleteFieldNormalizer.normalizePosition(request.getPosicionSecundaria(), false)
+                : null;
+        String normalizedFoot = (request.getPieDominante() != null && !request.getPieDominante().isBlank())
+                ? AthleteFieldNormalizer.normalizePreferredFoot(request.getPieDominante())
+                : "DERECHO";
+        String normalizedNationality = (request.getNacionalidad() != null && !request.getNacionalidad().isBlank())
+                ? AthleteFieldNormalizer.normalizeNationality(request.getNacionalidad())
+                : "Venezuela";
+
+        BulkImportRowDto row = BulkImportRowDto.builder()
+                .rowNumber(1)
+                .primerNombre(request.getPrimerNombre().trim())
+                .segundoNombre(request.getSegundoNombre() != null ? request.getSegundoNombre().trim() : null)
+                .primerApellido(request.getPrimerApellido().trim())
+                .segundoApellido(request.getSegundoApellido() != null ? request.getSegundoApellido().trim() : null)
+                .cedulaIdentidadAtleta(request.getCedulaIdentidadAtleta())
+                .fechaNacimiento(request.getFechaNacimiento())
+                .genero(normalizedGender)
+                .posicionPrincipal(normalizedPrimaryPosition)
+                .posicionSecundaria(normalizedSecondaryPosition)
+                .pieDominante(normalizedFoot)
+                .nacionalidad(normalizedNationality)
+                .alturaCm(request.getAlturaCm())
+                .pesoKg(request.getPesoKg())
+                .nombreCompletoTutor(request.getNombreCompletoTutor().trim())
+                .cedulaIdentidadTutor(request.getCedulaIdentidadTutor())
+                .correoTutor(request.getCorreoTutor().trim())
+                .telefonoTutor(request.getTelefonoTutor())
+                .build();
+
+        return processor.registerIndividualAthlete(row, context.club(), context.organizationName());
+    }
+
+    private ScoutContext validateAndResolveScoutContext(UUID scoutUserId) {
+        User scoutUser = userRepository.findById(scoutUserId)
+                .orElseThrow(() -> new IllegalArgumentException("Usuario scout no encontrado"));
+
+        if (scoutUser.getRole() == com.talentus.scout.domain.enums.UserRole.ADMIN) {
+            throw new org.springframework.security.access.AccessDeniedException(
+                    "El rol Administrador no tiene permitido realizar operaciones de carga masiva de atletas."
+            );
+        }
+
+        Optional<ScoutProfile> optProfile = scoutProfileRepository.findByUserId(scoutUserId);
+        if (optProfile.isEmpty() || !optProfile.get().isBulkImportEnabled()) {
+            throw new org.springframework.security.access.AccessDeniedException(
+                    "Tu perfil de scout no tiene habilitada la funcionalidad de carga masiva. Contacta al administrador."
+            );
+        }
+
+        String orgName = optProfile.get().getOrganizationName() != null
+                ? optProfile.get().getOrganizationName()
+                : "Organización Deportiva";
+        ClubOrganization club = clubOrganizationRepository.findByNameIgnoreCase(orgName).orElse(null);
+
+        return new ScoutContext(scoutUser, club, orgName);
+    }
+
+    private record ScoutContext(User scoutUser, ClubOrganization club, String organizationName) {
     }
 
     private void scheduleAsyncProcessing(UUID jobId, List<BulkImportRowDto> rows) {
