@@ -5,10 +5,13 @@ import com.talentus.scout.repository.UserRepository;
 import com.talentus.scout.service.bulkimport.BulkImportService;
 import com.talentus.scout.web.dto.bulkimport.BulkImportJobResponseDto;
 import com.talentus.scout.web.dto.bulkimport.GoogleSheetImportRequestDto;
+import com.talentus.scout.web.dto.bulkimport.ScoutIndividualAthleteRequest;
+import com.talentus.scout.web.dto.bulkimport.ScoutIndividualAthleteResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -49,6 +52,17 @@ public class BulkImportController {
         User scout = getScoutUser(authentication);
         BulkImportJobResponseDto response = bulkImportService.startGoogleSheetJob(scout.getId(), request.getSheetUrlOrId());
         return ResponseEntity.accepted().body(response);
+    }
+
+    @PostMapping(value = "/individual", consumes = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('SCOUT', 'VERIFIER_ORG')")
+    public ResponseEntity<ScoutIndividualAthleteResponse> registerIndividualAthlete(
+            @Valid @RequestBody ScoutIndividualAthleteRequest request,
+            Authentication authentication
+    ) {
+        User scout = getScoutUser(authentication);
+        ScoutIndividualAthleteResponse response = bulkImportService.registerIndividualAthlete(scout.getId(), request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @GetMapping("/jobs/{jobId}")

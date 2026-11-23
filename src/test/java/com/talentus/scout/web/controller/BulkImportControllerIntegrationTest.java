@@ -23,9 +23,11 @@ import org.springframework.web.context.WebApplicationContext;
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 
+import org.springframework.http.MediaType;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -242,8 +244,141 @@ class BulkImportControllerIntegrationTest {
             mockMvc.perform(get("/api/v1/scout/bulk-import/template?format=csv")
                             .header("Authorization", "Bearer " + adminToken))
                     .andExpect(status().isOk());
+
+            // POST /individual with ADMIN token -> 403 Forbidden
+            mockMvc.perform(post("/api/v1/scout/bulk-import/individual")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("{\"primerNombre\":\"Luis\",\"primerApellido\":\"Rojas\",\"fechaNacimiento\":\"2010-05-14\",\"posicionPrincipal\":\"Delantero Centro\",\"nombreCompletoTutor\":\"Carlos Rojas\",\"correoTutor\":\"carlos.rojas@talentus.test\"}")
+                            .header("Authorization", "Bearer " + adminToken))
+                    .andExpect(status().isForbidden());
         } finally {
             userRepository.delete(adminUser);
+        }
+    }
+
+    @Test
+    void shouldRegisterIndividualAthleteSuccessfullyAndRejectDuplicateDocument() throws Exception {
+        long ts = System.currentTimeMillis();
+        String docNumber = "V-" + (ts % 100000000);
+        String payload = """
+                {
+                  "primerNombre": "Mateo",
+                  "segundoNombre": "José",
+                  "primerApellido": "Ramírez",
+                  "segundoApellido": "Díaz",
+                  "cedulaIdentidadAtleta": "%s",
+                  "fechaNacimiento": "2011-04-18",
+                  "genero": "Masculino",
+                  "posicionPrincipal": "Delantero Centro",
+                  "posicionSecundaria": "Extremo Izquierdo",
+                  "pieDominante": "Izquierdo",
+                  "nacionalidad": "Venezuela",
+                  "alturaCm": 168.5,
+                  "pesoKg": 58.0,
+                  "nombreCompletoTutor": "José Ramírez",
+                  "cedulaIdentidadTutor": "V-12345678",
+                  "correoTutor": "%s",
+                  "telefonoTutor": "+584121234567"
+                }
+                """.formatted(docNumber, createdTutorEmail);
+
+        mockMvc.perform(post("/api/v1/scout/bulk-import/individual")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(payload)
+                        .header("Authorization", "Bearer " + scoutToken))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.athleteFullName").value("Mateo José Ramírez Díaz"))
+                .andExpect(jsonPath("$.clubName").value(club.getName()))
+                .andExpect(jsonPath("$.tutorEmail").value(createdTutorEmail))
+                .andExpect(jsonPath("$.newTutor").value(true))
+                .andExpect(jsonPath("$.legalVerificationStatus").value("PENDING_REVIEW"));
+
+        User tutor = userRepository.findByEmail(createdTutorEmail).orElse(null);
+        assertNotNull(tutor);
+        assertFalse(tutorActivationTokenRepository.findAll().stream()
+                .filter(t -> t.getTutor().getId().equals(tutor.getId()))
+                .toList()
+                .isEmpty());
+
+        assertTrue(athleteRepository.findByTutorIdOrderByCreatedAtDesc(tutor.getId()).stream()
+                .anyMatch(a -> docNumber.equals(a.getIdentityDocumentNumber())
+                        && "Mateo José".equals(a.getFirstName())
+                        && "Ramírez Díaz".equals(a.getLastName())
+                        && a.getCurrentClub() != null
+                        && club.getId().equals(a.getCurrentClub().getId())
+                        && a.isPublic()));
+
+        // Cédula duplicada -> 409 Conflict
+        mockMvc.perform(post("/api/v1/scout/bulk-import/individual")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(payload)
+                        .header("Authorization", "Bearer " + scoutToken))
+                .andExpect(status().isConflict());
+    }
+
+    @Test
+    void shouldReturnBadRequestWhenIndividualAthleteAgeIsOutOfFormativeRange() throws Exception {
+        String invalidAgePayload = """
+                {
+                  "primerNombre": "Pedro",
+                  "primerApellido": "Pérez",
+                  "fechaNacimiento": "1990-01-10",
+                  "genero": "Masculino",
+                  "posicionPrincipal": "Portero",
+                  "nombreCompletoTutor": "Tutor Prueba",
+                  "correoTutor": "%s"
+                }
+                """.formatted(createdTutorEmail);
+
+        mockMvc.perform(post("/api/v1/scout/bulk-import/individual")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(invalidAgePayload)
+                        .header("Authorization", "Bearer " + scoutToken))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void shouldForbidIndividualRegistrationWhenScoutHasBulkImportDisabled() throws Exception {
+        long ts = System.currentTimeMillis();
+        User disabledScout = userRepository.save(User.builder()
+                .email("scout.disabled." + ts + "@talentus.test")
+                .passwordHash(passwordEncoder.encode("Password123*"))
+                .fullName("Scout Disabled")
+                .phoneNumber("+584120007788")
+                .role(UserRole.SCOUT)
+                .status(AccountStatus.ACTIVE)
+                .build());
+
+        ScoutProfile disabledProfile = scoutProfileRepository.save(ScoutProfile.builder()
+                .user(disabledScout)
+                .organizationName(club.getName())
+                .scoutRole("Scout")
+                .credentialsDocumentUrl("/uploads/credentials/disabled-" + ts + ".pdf")
+                .verificationStatus(ScoutVerificationStatus.APPROVED)
+                .bulkImportEnabled(false)
+                .build());
+
+        String disabledToken = jwtService.generateToken(disabledScout);
+        try {
+            String payload = """
+                    {
+                      "primerNombre": "Luis",
+                      "primerApellido": "Rojas",
+                      "fechaNacimiento": "2010-05-14",
+                      "posicionPrincipal": "Delantero Centro",
+                      "nombreCompletoTutor": "Carlos Rojas",
+                      "correoTutor": "%s"
+                    }
+                    """.formatted(createdTutorEmail);
+
+            mockMvc.perform(post("/api/v1/scout/bulk-import/individual")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(payload)
+                            .header("Authorization", "Bearer " + disabledToken))
+                    .andExpect(status().isForbidden());
+        } finally {
+            scoutProfileRepository.delete(disabledProfile);
+            userRepository.delete(disabledScout);
         }
     }
 }
