@@ -2,17 +2,26 @@ package com.talentus.scout.specification;
 
 import com.talentus.scout.domain.entity.Athlete;
 import com.talentus.scout.domain.entity.AthleteVideo;
+import com.talentus.scout.domain.entity.ClubOrganization;
 import com.talentus.scout.domain.enums.VideoStatus;
 import com.talentus.scout.util.AthleteFieldNormalizer;
+import jakarta.persistence.criteria.Expression;
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Root;
 import jakarta.persistence.criteria.Subquery;
 import org.springframework.data.jpa.domain.Specification;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 
 public final class AthleteSpecifications {
+
+    private static final int MIN_SAFE_BIRTH_YEAR = 1900;
+    private static final int MAX_SAFE_BIRTH_YEAR = 2100;
 
     private AthleteSpecifications() {
     }
@@ -29,6 +38,9 @@ public final class AthleteSpecifications {
         if (birthYear == null) {
             return null;
         }
+        if (birthYear < MIN_SAFE_BIRTH_YEAR || birthYear > MAX_SAFE_BIRTH_YEAR) {
+            return (root, query, cb) -> cb.disjunction();
+        }
         LocalDate startDate = LocalDate.of(birthYear, 1, 1);
         LocalDate endDate = LocalDate.of(birthYear, 12, 31);
         return (root, query, cb) -> cb.between(root.get("birthDate"), startDate, endDate);
@@ -43,8 +55,12 @@ public final class AthleteSpecifications {
             birthYearFrom = birthYearTo;
             birthYearTo = temp;
         }
-        final Integer from = birthYearFrom;
-        final Integer to = birthYearTo;
+        if ((birthYearFrom != null && birthYearFrom > MAX_SAFE_BIRTH_YEAR)
+                || (birthYearTo != null && birthYearTo < MIN_SAFE_BIRTH_YEAR)) {
+            return (root, query, cb) -> cb.disjunction();
+        }
+        final Integer from = birthYearFrom != null ? Math.max(birthYearFrom, MIN_SAFE_BIRTH_YEAR) : null;
+        final Integer to = birthYearTo != null ? Math.min(birthYearTo, MAX_SAFE_BIRTH_YEAR) : null;
 
         return (root, query, cb) -> {
             if (from != null && to != null) {
@@ -57,6 +73,57 @@ public final class AthleteSpecifications {
             } else {
                 LocalDate endDate = LocalDate.of(to, 12, 31);
                 return cb.lessThanOrEqualTo(root.get("birthDate"), endDate);
+            }
+        };
+    }
+
+    public static Specification<Athlete> withSearchQuery(String searchQuery) {
+        if (searchQuery == null || searchQuery.isBlank()) {
+            return null;
+        }
+        String pattern = "%" + searchQuery.trim().toLowerCase(Locale.ROOT) + "%";
+        return (root, query, cb) -> {
+            Join<Athlete, ClubOrganization> clubJoin = root.join("currentClub", JoinType.LEFT);
+            Expression<String> firstName = cb.coalesce(root.get("firstName"), "");
+            Expression<String> lastName = cb.coalesce(root.get("lastName"), "");
+            Expression<String> fullName = cb.concat(cb.concat(firstName, " "), lastName);
+            Expression<String> clubName = cb.coalesce(clubJoin.get("name"), "");
+
+            return cb.or(
+                    cb.like(cb.lower(firstName), pattern),
+                    cb.like(cb.lower(lastName), pattern),
+                    cb.like(cb.lower(fullName), pattern),
+                    cb.like(cb.lower(clubName), pattern)
+            );
+        };
+    }
+
+    public static Specification<Athlete> withHeightRange(BigDecimal minHeightCm, BigDecimal maxHeightCm) {
+        return withDecimalRange("heightCm", minHeightCm, maxHeightCm);
+    }
+
+    public static Specification<Athlete> withWeightRange(BigDecimal minWeightKg, BigDecimal maxWeightKg) {
+        return withDecimalRange("weightKg", minWeightKg, maxWeightKg);
+    }
+
+    private static Specification<Athlete> withDecimalRange(String fieldName, BigDecimal min, BigDecimal max) {
+        if (min == null && max == null) {
+            return null;
+        }
+        if (min != null && max != null && min.compareTo(max) > 0) {
+            BigDecimal temp = min;
+            min = max;
+            max = temp;
+        }
+        final BigDecimal lower = min;
+        final BigDecimal upper = max;
+        return (root, query, cb) -> {
+            if (lower != null && upper != null) {
+                return cb.between(root.get(fieldName), lower, upper);
+            } else if (lower != null) {
+                return cb.greaterThanOrEqualTo(root.get(fieldName), lower);
+            } else {
+                return cb.lessThanOrEqualTo(root.get(fieldName), upper);
             }
         };
     }
