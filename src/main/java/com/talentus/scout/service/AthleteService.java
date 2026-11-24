@@ -128,7 +128,6 @@ public class AthleteService {
                 .build();
 
         Athlete saved = athleteRepository.save(athlete);
-        adminNotificationService.notifyNewAthleteRegistered(saved);
 
         return enrichAthleteResponse(new AthleteResponse(saved));
     }
@@ -261,6 +260,17 @@ public class AthleteService {
         athlete.setLegalVerifiedAt(null);
 
         Athlete updated = athleteRepository.save(athlete);
+
+        // Pre-inicializar relaciones LAZY dentro de la transacción antes del envío @Async
+        if (updated.getTutor() != null) {
+            updated.getTutor().getFullName();
+            updated.getTutor().getEmail();
+        }
+        if (updated.getCurrentClub() != null) {
+            updated.getCurrentClub().getName();
+        }
+        adminNotificationService.notifyNewAthleteRegistered(updated);
+
         return enrichAthleteResponse(new AthleteResponse(updated));
     }
 

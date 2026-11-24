@@ -51,70 +51,30 @@ public class AdminNotificationService {
     }
 
     @Async
-    public void notifyNewTutorRegistered(User tutor, TutorLegalConsent consent) {
-        if (tutor == null) return;
-
-        String subject = "[ALERTA ADMIN] Nuevo Representante Registrado — Requiere Verificación de Documento";
-        String auditUrl = frontendBaseUrl + "/admin/verificacion-legal";
-
-        String docType = (consent != null && consent.getIdDocumentType() != null) ? consent.getIdDocumentType() : "Cédula";
-        String docNumber = (consent != null && consent.getIdDocumentNumber() != null) ? consent.getIdDocumentNumber() : "No especificado";
-        String docFileStatus = (consent != null && consent.getIdDocumentFileUrl() != null) ? "Documento Adjunto en Plataforma" : "Pendiente de Carga";
-
-        String htmlBody = String.format("""
-                <div style='font-family: sans-serif; background: #0A0F1D; color: #F8FAFC; padding: 24px; border-radius: 12px;'>
-                  <div style='text-align: center; margin-bottom: 24px;'>
-                    <img src='%s' alt='Talentus Scout' height='110' style='height: 110px; max-height: 120px; width: auto; max-width: 100%%; display: block; margin: 0 auto; border: 0;' />
-                  </div>
-                  <div style='background: rgba(16, 185, 129, 0.15); border: 1px solid #10B981; padding: 12px; border-radius: 8px; margin-bottom: 20px;'>
-                    <strong style='color: #10B981; font-size: 14px;'>NUEVO REPRESENTANTE / TUTOR LEGAL REGISTRADO</strong>
-                  </div>
-                  <p>Estimado(a) Administrador(a),</p>
-                  <p>Se ha registrado un nuevo tutor en la plataforma bajo la normativa LOPNNA Art. 65:</p>
-                  <table style='width: 100%%; border-collapse: collapse; margin-bottom: 20px; font-size: 14px;'>
-                    <tr><td style='padding: 6px 0; color: #94A3B8;'>Nombre Completo:</td><td style='padding: 6px 0; font-weight: bold;'>%s</td></tr>
-                    <tr><td style='padding: 6px 0; color: #94A3B8;'>Correo Electrónico:</td><td style='padding: 6px 0; font-weight: bold;'>%s</td></tr>
-                    <tr><td style='padding: 6px 0; color: #94A3B8;'>Teléfono:</td><td style='padding: 6px 0;'>%s</td></tr>
-                    <tr><td style='padding: 6px 0; color: #94A3B8;'>Ubicación:</td><td style='padding: 6px 0;'>%s, %s</td></tr>
-                    <tr><td style='padding: 6px 0; color: #94A3B8;'>Documento Identidad:</td><td style='padding: 6px 0;'>%s %s</td></tr>
-                    <tr><td style='padding: 6px 0; color: #94A3B8;'>Archivo de Documento:</td><td style='padding: 6px 0; color: #10B981;'>%s</td></tr>
-                  </table>
-                  <div style='margin-top: 24px;'>
-                    <a href='%s' style='background: #10B981; color: #0A0F1D; font-weight: bold; padding: 12px 24px; border-radius: 6px; text-decoration: none; display: inline-block;'>Auditar Documento de Representante</a>
-                  </div>
-                </div>
-              """,
-                emailService.getBrandingLogoUrl(),
-                tutor.getFullName(),
-                tutor.getEmail(),
-                tutor.getPhoneNumber() != null ? tutor.getPhoneNumber() : "No provisto",
-                tutor.getState() != null ? tutor.getState() : "No especificado",
-                tutor.getCountry() != null ? tutor.getCountry() : "Venezuela",
-                docType,
-                docNumber,
-                docFileStatus,
-                auditUrl
-        );
-
-        String mockDetails = String.format("Tutor: %s (%s)\nUbicación: %s\nEnlace: %s", tutor.getFullName(), tutor.getEmail(), tutor.getState(), auditUrl);
-
-        for (String adminEmail : getActiveAdminEmails()) {
-            emailService.sendAdminAlert(adminEmail, subject, htmlBody, mockDetails);
-        }
-        log.info("Alerta de nuevo tutor {} despachada a administradores.", tutor.getEmail());
-    }
-
-    @Async
     public void notifyNewAthleteRegistered(Athlete athlete) {
         if (athlete == null) return;
 
-        String subject = "[ALERTA ADMIN] Nuevo Atleta Inscrito — Patria Potestad Pendiente de Auditoría";
+        String subject = "[ALERTA ADMIN] Documento de Patria Potestad Cargado — Auditoría Legal Pendiente";
         String auditUrl = frontendBaseUrl + "/admin/verificacion-legal";
 
-        String athleteName = athlete.getFirstName() + " " + athlete.getLastName();
-        String tutorName = athlete.getTutor() != null ? athlete.getTutor().getFullName() : "Representante Legal";
-        String tutorEmail = athlete.getTutor() != null ? athlete.getTutor().getEmail() : "N/A";
-        String clubName = athlete.getCurrentClub() != null ? athlete.getCurrentClub().getName() : "Independiente / Sin afiliación";
+        String athleteName = (athlete.getFirstName() != null ? athlete.getFirstName() : "") + " " +
+                (athlete.getLastName() != null ? athlete.getLastName() : "");
+        athleteName = athleteName.trim();
+        String tutorName = athlete.getTutor() != null && athlete.getTutor().getFullName() != null
+                ? athlete.getTutor().getFullName()
+                : "Representante Legal";
+        String tutorEmail = athlete.getTutor() != null && athlete.getTutor().getEmail() != null
+                ? athlete.getTutor().getEmail()
+                : "N/A";
+        String clubName = athlete.getCurrentClub() != null && athlete.getCurrentClub().getName() != null
+                ? athlete.getCurrentClub().getName()
+                : "Independiente / Sin afiliación";
+        String docType = athlete.getIdentityDocumentType() != null && !athlete.getIdentityDocumentType().isBlank()
+                ? athlete.getIdentityDocumentType()
+                : "Documento de Identidad";
+        String docNumber = athlete.getIdentityDocumentNumber() != null && !athlete.getIdentityDocumentNumber().isBlank()
+                ? athlete.getIdentityDocumentNumber()
+                : "No especificado";
 
         String htmlBody = String.format("""
                 <div style='font-family: sans-serif; background: #0A0F1D; color: #F8FAFC; padding: 24px; border-radius: 12px;'>
@@ -122,12 +82,13 @@ public class AdminNotificationService {
                     <img src='%s' alt='Talentus Scout' height='110' style='height: 110px; max-height: 120px; width: auto; max-width: 100%%; display: block; margin: 0 auto; border: 0;' />
                   </div>
                   <div style='background: rgba(56, 189, 248, 0.15); border: 1px solid #38BDF8; padding: 12px; border-radius: 8px; margin-bottom: 20px;'>
-                    <strong style='color: #38BDF8; font-size: 14px;'>NUEVO ATLETA REGISTRADO — AUDITORÍA DE PATRIA POTESTAD</strong>
+                    <strong style='color: #38BDF8; font-size: 14px;'>DOCUMENTACIÓN DE PATRIA POTESTAD LISTA PARA AUDITORÍA</strong>
                   </div>
                   <p>Estimado(a) Administrador(a),</p>
-                  <p>Se ha inscrito un nuevo atleta juvenil en la plataforma. Requiere revisión para habilitar su visibilidad en el radar de reclutamiento:</p>
+                  <p>El representante legal ha cargado o actualizado el documento de identidad / patria potestad del siguiente atleta juvenil. El perfil se encuentra listo para revisión en el panel de verificación legal:</p>
                   <table style='width: 100%%; border-collapse: collapse; margin-bottom: 20px; font-size: 14px;'>
                     <tr><td style='padding: 6px 0; color: #94A3B8;'>Atleta:</td><td style='padding: 6px 0; font-weight: bold;'>%s</td></tr>
+                    <tr><td style='padding: 6px 0; color: #94A3B8;'>Documento Cargado:</td><td style='padding: 6px 0; font-weight: bold;'>%s — %s</td></tr>
                     <tr><td style='padding: 6px 0; color: #94A3B8;'>Fecha de Nacimiento:</td><td style='padding: 6px 0;'>%s</td></tr>
                     <tr><td style='padding: 6px 0; color: #94A3B8;'>Posición:</td><td style='padding: 6px 0;'>%s</td></tr>
                     <tr><td style='padding: 6px 0; color: #94A3B8;'>Club / Academia:</td><td style='padding: 6px 0;'>%s</td></tr>
@@ -141,6 +102,8 @@ public class AdminNotificationService {
               """,
                 emailService.getBrandingLogoUrl(),
                 athleteName,
+                docType,
+                docNumber,
                 athlete.getBirthDate() != null ? athlete.getBirthDate().toString() : "No especificada",
                 athlete.getPrimaryPosition() != null ? athlete.getPrimaryPosition() : "No definida",
                 clubName,
@@ -149,12 +112,13 @@ public class AdminNotificationService {
                 auditUrl
         );
 
-        String mockDetails = String.format("Atleta: %s\nTutor: %s (%s)\nClub: %s\nEnlace: %s", athleteName, tutorName, tutorEmail, clubName, auditUrl);
+        String mockDetails = String.format("Atleta: %s\nDocumento: %s %s\nTutor: %s (%s)\nClub: %s\nEnlace: %s",
+                athleteName, docType, docNumber, tutorName, tutorEmail, clubName, auditUrl);
 
         for (String adminEmail : getActiveAdminEmails()) {
             emailService.sendAdminAlert(adminEmail, subject, htmlBody, mockDetails);
         }
-        log.info("Alerta de nuevo atleta {} despachada a administradores.", athleteName);
+        log.info("Alerta de documento de patria potestad para atleta {} despachada a administradores.", athleteName);
     }
 
     @Async

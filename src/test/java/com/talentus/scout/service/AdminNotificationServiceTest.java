@@ -77,49 +77,7 @@ class AdminNotificationServiceTest {
     }
 
     @Test
-    @DisplayName("notifyNewTutorRegistered envía alerta por correo con enlace a verificación legal")
-    void notifyNewTutorRegistered_success() {
-        when(userRepository.findByRoleAndStatus(UserRole.ADMIN, AccountStatus.ACTIVE))
-                .thenReturn(List.of(adminUser));
-        when(emailService.getBrandingLogoUrl()).thenReturn("https://talentus.app/logo.png");
-
-        User tutor = User.builder()
-                .fullName("Carlos Mendoza")
-                .email("carlos.mendoza@gmail.com")
-                .phoneNumber("+584141234567")
-                .state("Carabobo")
-                .country("Venezuela")
-                .build();
-
-        TutorLegalConsent consent = TutorLegalConsent.builder()
-                .idDocumentType("V")
-                .idDocumentNumber("18765432")
-                .idDocumentFileUrl("/uploads/docs/cedula.pdf")
-                .build();
-
-        adminNotificationService.notifyNewTutorRegistered(tutor, consent);
-
-        ArgumentCaptor<String> subjectCaptor = ArgumentCaptor.forClass(String.class);
-        ArgumentCaptor<String> htmlCaptor = ArgumentCaptor.forClass(String.class);
-
-        verify(emailService, times(1)).sendAdminAlert(
-                eq("admin.audit@talentusscout.com"),
-                subjectCaptor.capture(),
-                htmlCaptor.capture(),
-                anyString()
-        );
-
-        assertThat(subjectCaptor.getValue()).contains("Nuevo Representante Registrado");
-        assertThat(htmlCaptor.getValue()).contains("Carlos Mendoza");
-        assertThat(htmlCaptor.getValue()).contains("V 18765432");
-        assertThat(htmlCaptor.getValue()).contains("https://talentusscout.com/admin/verificacion-legal");
-        assertThat(htmlCaptor.getValue()).contains("height='110'");
-        assertThat(htmlCaptor.getValue()).contains("max-height: 120px;");
-        assertThat(htmlCaptor.getValue()).contains("https://talentus.app/logo.png");
-    }
-
-    @Test
-    @DisplayName("notifyNewAthleteRegistered envía alerta por correo con datos del atleta y tutor")
+    @DisplayName("notifyNewAthleteRegistered envía alerta por correo con datos del documento, atleta y tutor")
     void notifyNewAthleteRegistered_success() {
         when(userRepository.findByRoleAndStatus(UserRole.ADMIN, AccountStatus.ACTIVE))
                 .thenReturn(List.of(adminUser));
@@ -139,24 +97,32 @@ class AdminNotificationServiceTest {
                 .lastName("Pérez")
                 .birthDate(LocalDate.of(2011, 4, 15))
                 .primaryPosition("Medio Centro")
+                .identityDocumentType("PARTIDA_NACIMIENTO")
+                .identityDocumentNumber("PN-123456")
                 .currentClub(club)
                 .tutor(tutor)
                 .build();
 
         adminNotificationService.notifyNewAthleteRegistered(athlete);
 
+        ArgumentCaptor<String> subjectCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> htmlCaptor = ArgumentCaptor.forClass(String.class);
         verify(emailService, times(1)).sendAdminAlert(
                 eq("admin.audit@talentusscout.com"),
-                contains("Nuevo Atleta Inscrito"),
+                subjectCaptor.capture(),
                 htmlCaptor.capture(),
                 anyString()
         );
 
+        assertThat(subjectCaptor.getValue()).contains("Documento de Patria Potestad Cargado");
         assertThat(htmlCaptor.getValue()).contains("Alejandro Pérez");
+        assertThat(htmlCaptor.getValue()).contains("PARTIDA_NACIMIENTO");
+        assertThat(htmlCaptor.getValue()).contains("PN-123456");
         assertThat(htmlCaptor.getValue()).contains("Academia Secasports");
         assertThat(htmlCaptor.getValue()).contains("María Pérez");
         assertThat(htmlCaptor.getValue()).contains("https://talentusscout.com/admin/verificacion-legal");
+        assertThat(htmlCaptor.getValue()).contains("height='110'");
+        assertThat(htmlCaptor.getValue()).contains("https://talentus.app/logo.png");
     }
 
     @Test
