@@ -55,6 +55,21 @@ public class ScoutProfile {
     @Column(name = "linkedin_url", columnDefinition = "TEXT")
     private String linkedinUrl;
 
+    @Column(name = "profile_photo_url", columnDefinition = "TEXT")
+    private String profilePhotoUrl;
+
+    @Builder.Default
+    @Column(name = "show_in_network", nullable = false)
+    private boolean showInNetwork = true;
+
+    @Builder.Default
+    @Column(name = "show_whatsapp_in_network", nullable = false)
+    private boolean showWhatsappInNetwork = true;
+
+    @Builder.Default
+    @Column(name = "show_email_in_network", nullable = false)
+    private boolean showEmailInNetwork = true;
+
     @Builder.Default
     @Column(name = "accepted_terms", nullable = false)
     private boolean acceptedTerms = false;
@@ -95,13 +110,25 @@ public class ScoutProfile {
     @Column(name = "created_at", updatable = false)
     private Instant createdAt;
 
+    @Column(name = "updated_at", nullable = false)
+    private Instant updatedAt;
+
     @PrePersist
     protected void onCreate() {
+        Instant now = Instant.now();
         if (createdAt == null) {
-            createdAt = Instant.now();
+            createdAt = now;
+        }
+        if (updatedAt == null) {
+            updatedAt = now;
         }
         if (verificationStatus == null) {
             verificationStatus = ScoutVerificationStatus.PENDING;
         }
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = Instant.now();
     }
 }
