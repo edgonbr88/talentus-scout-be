@@ -149,7 +149,6 @@ public class AuthService {
 
         String verificationLink = frontendBaseUrl + "/auth/verify-email?token=" + token;
         emailService.sendEmailVerification(savedUser.getEmail(), savedUser.getFullName(), verificationLink);
-        adminNotificationService.notifyNewTutorRegistered(savedUser, consent);
 
         return RegisterTutorResponse.builder()
                 .userId(savedUser.getId())
