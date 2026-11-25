@@ -79,6 +79,21 @@ public class Athlete {
     @Column(name = "bio", columnDefinition = "TEXT")
     private String bio;
 
+    @Column(name = "instagram_url", length = 500)
+    private String instagramUrl;
+
+    @Column(name = "tiktok_url", length = 500)
+    private String tiktokUrl;
+
+    @Column(name = "youtube_url", length = 500)
+    private String youtubeUrl;
+
+    @Column(name = "other_video_platform_url", length = 500)
+    private String otherVideoPlatformUrl;
+
+    @Column(name = "other_video_platform_label", length = 60)
+    private String otherVideoPlatformLabel;
+
     @Column(name = "slug", nullable = false, unique = true, length = 120)
     private String slug;
 

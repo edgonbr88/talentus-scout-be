@@ -20,21 +20,34 @@ import com.talentus.scout.web.dto.AthleteResponse;
 import com.talentus.scout.web.dto.CreateAthleteRequest;
 import com.talentus.scout.web.dto.UpdateAthleteRequest;
 import com.talentus.scout.web.dto.publicprofile.*;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.net.URI;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.Period;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Service
 public class AthleteService {
+
+    private static final Set<String> INSTAGRAM_ALLOWED_DOMAINS = Set.of("instagram.com", "instagr.am");
+    private static final Set<String> TIKTOK_ALLOWED_DOMAINS = Set.of("tiktok.com");
+    private static final Set<String> YOUTUBE_ALLOWED_DOMAINS = Set.of("youtube.com", "youtu.be");
+    private static final Pattern VALID_HOSTNAME_PATTERN =
+            Pattern.compile("^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+$");
 
     private final AthleteRepository athleteRepository;
     private final UserRepository userRepository;
@@ -209,6 +222,8 @@ public class AthleteService {
             athlete.setPublic(request.getIsPublic());
         }
 
+        applySocialLinksUpdate(athlete, request);
+
         Athlete updated = athleteRepository.save(athlete);
         return enrichAthleteResponse(new AthleteResponse(updated));
     }
@@ -370,6 +385,7 @@ public class AthleteService {
                 .collect(Collectors.toList());
 
         int age = AthleteFieldNormalizer.calculateSafeAge(athlete.getBirthDate());
+        PublicSocialLinksDto socialLinksDto = buildPublicSocialLinksIfAuthorized(athlete, authentication);
 
         return PublicAthleteResponse.builder()
                 .id(athlete.getId())
@@ -391,6 +407,7 @@ public class AthleteService {
                 .metrics(metricsDto)
                 .badges(badgeDtos)
                 .videos(videoDtos)
+                .socialLinks(socialLinksDto)
                 .build();
     }
 
@@ -497,6 +514,156 @@ public class AthleteService {
             response.setIdentityDocumentFileUrl(fileStorageService.generatePresignedUrl(response.getIdentityDocumentFileUrl(), java.time.Duration.ofMinutes(5)));
         }
         return response;
+    }
+
+    private void applySocialLinksUpdate(Athlete athlete, UpdateAthleteRequest request) {
+        String requestedInstagram = request.getInstagramUrl() != null ? trimToNull(request.getInstagramUrl()) : athlete.getInstagramUrl();
+        String requestedTiktok = request.getTiktokUrl() != null ? trimToNull(request.getTiktokUrl()) : athlete.getTiktokUrl();
+        String requestedYoutube = request.getYoutubeUrl() != null ? trimToNull(request.getYoutubeUrl()) : athlete.getYoutubeUrl();
+        String requestedOtherUrl = request.getOtherVideoPlatformUrl() != null ? trimToNull(request.getOtherVideoPlatformUrl()) : athlete.getOtherVideoPlatformUrl();
+        String requestedOtherLabel = request.getOtherVideoPlatformLabel() != null ? trimToNull(request.getOtherVideoPlatformLabel()) : athlete.getOtherVideoPlatformLabel();
+
+        boolean socialModified = !Objects.equals(requestedInstagram, athlete.getInstagramUrl())
+                || !Objects.equals(requestedTiktok, athlete.getTiktokUrl())
+                || !Objects.equals(requestedYoutube, athlete.getYoutubeUrl())
+                || !Objects.equals(requestedOtherUrl, athlete.getOtherVideoPlatformUrl())
+                || !Objects.equals(requestedOtherLabel, athlete.getOtherVideoPlatformLabel());
+
+        if (!socialModified) {
+            return;
+        }
+
+        if (!hasActiveSubscription(athlete.getId())) {
+            throw new AccessDeniedException(
+                    "Se requiere una suscripción Plan Pro activa para agregar o modificar redes sociales y plataformas de video externo."
+            );
+        }
+
+        String validatedInstagram = request.getInstagramUrl() != null
+                ? sanitizeAndValidateSocialUrl(request.getInstagramUrl(), "Instagram", INSTAGRAM_ALLOWED_DOMAINS)
+                : athlete.getInstagramUrl();
+        String validatedTiktok = request.getTiktokUrl() != null
+                ? sanitizeAndValidateSocialUrl(request.getTiktokUrl(), "TikTok", TIKTOK_ALLOWED_DOMAINS)
+                : athlete.getTiktokUrl();
+        String validatedYoutube = request.getYoutubeUrl() != null
+                ? sanitizeAndValidateSocialUrl(request.getYoutubeUrl(), "YouTube", YOUTUBE_ALLOWED_DOMAINS)
+                : athlete.getYoutubeUrl();
+        String validatedOtherUrl = request.getOtherVideoPlatformUrl() != null
+                ? sanitizeAndValidateSocialUrl(request.getOtherVideoPlatformUrl(), "Otra plataforma de video", null)
+                : athlete.getOtherVideoPlatformUrl();
+
+        String validatedOtherLabel = requestedOtherLabel;
+        if (validatedOtherLabel != null && validatedOtherLabel.length() > 60) {
+            throw new IllegalArgumentException("El nombre de la plataforma externa no puede superar los 60 caracteres.");
+        }
+
+        if (validatedOtherUrl == null) {
+            if (request.getOtherVideoPlatformLabel() != null && !request.getOtherVideoPlatformLabel().isBlank()) {
+                throw new IllegalArgumentException("Debes indicar una URL válida para la plataforma externa antes de asignar su nombre.");
+            }
+            validatedOtherLabel = null;
+        }
+
+        athlete.setInstagramUrl(validatedInstagram);
+        athlete.setTiktokUrl(validatedTiktok);
+        athlete.setYoutubeUrl(validatedYoutube);
+        athlete.setOtherVideoPlatformUrl(validatedOtherUrl);
+        athlete.setOtherVideoPlatformLabel(validatedOtherLabel);
+    }
+
+    private boolean hasActiveSubscription(UUID athleteId) {
+        Instant now = Instant.now();
+        return athleteSubscriptionRepository
+                .findFirstByAthleteIdAndStatusOrderByEndDateDesc(
+                        athleteId,
+                        com.talentus.scout.domain.enums.SubscriptionStatus.ACTIVE
+                )
+                .map(sub -> sub.getEndDate() != null && sub.getEndDate().isAfter(now))
+                .orElse(false);
+    }
+
+    private String trimToNull(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    private String sanitizeAndValidateSocialUrl(String rawUrl, String fieldLabel, Set<String> allowedDomains) {
+        String trimmed = trimToNull(rawUrl);
+        if (trimmed == null) {
+            return null;
+        }
+        if (trimmed.length() > 500) {
+            throw new IllegalArgumentException("El enlace de " + fieldLabel + " excede el máximo de 500 caracteres.");
+        }
+        if (trimmed.chars().anyMatch(Character::isWhitespace)) {
+            throw new IllegalArgumentException("El enlace de " + fieldLabel + " no puede contener espacios.");
+        }
+
+        URI uri;
+        try {
+            uri = URI.create(trimmed);
+        } catch (IllegalArgumentException ex) {
+            throw new IllegalArgumentException("El enlace de " + fieldLabel + " no tiene un formato de URL válido.");
+        }
+
+        String scheme = uri.getScheme();
+        if (scheme == null || !"https".equalsIgnoreCase(scheme)) {
+            throw new IllegalArgumentException("El enlace de " + fieldLabel + " debe comenzar obligatoriamente con https://.");
+        }
+
+        String host = uri.getHost();
+        if (host == null || host.isBlank()) {
+            throw new IllegalArgumentException("El enlace de " + fieldLabel + " debe incluir un dominio válido.");
+        }
+
+        String normalizedHost = host.toLowerCase(Locale.ROOT);
+        if (!VALID_HOSTNAME_PATTERN.matcher(normalizedHost).matches()) {
+            throw new IllegalArgumentException("El dominio del enlace de " + fieldLabel + " no es válido.");
+        }
+
+        if (allowedDomains != null && !matchesAllowedDomain(normalizedHost, allowedDomains)) {
+            throw new IllegalArgumentException(
+                    "El enlace de " + fieldLabel + " debe pertenecer a un dominio oficial (" + String.join(", ", allowedDomains) + ")."
+            );
+        }
+
+        return trimmed;
+    }
+
+    private boolean matchesAllowedDomain(String normalizedHost, Set<String> allowedDomains) {
+        for (String domain : allowedDomains) {
+            if (normalizedHost.equals(domain) || normalizedHost.endsWith("." + domain)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private PublicSocialLinksDto buildPublicSocialLinksIfAuthorized(Athlete athlete, Authentication authentication) {
+        if (!scoutSecurity.isApprovedScoutOrAdmin(authentication)) {
+            return null;
+        }
+
+        String instagram = trimToNull(athlete.getInstagramUrl());
+        String tiktok = trimToNull(athlete.getTiktokUrl());
+        String youtube = trimToNull(athlete.getYoutubeUrl());
+        String otherUrl = trimToNull(athlete.getOtherVideoPlatformUrl());
+        String otherLabel = trimToNull(athlete.getOtherVideoPlatformLabel());
+
+        if (instagram == null && tiktok == null && youtube == null && otherUrl == null) {
+            return null;
+        }
+
+        return PublicSocialLinksDto.builder()
+                .instagramUrl(instagram)
+                .tiktokUrl(tiktok)
+                .youtubeUrl(youtube)
+                .otherPlatformUrl(otherUrl)
+                .otherPlatformLabel(otherUrl != null ? otherLabel : null)
+                .build();
     }
 }
 

@@ -46,6 +46,11 @@ public class AthleteResponse {
     private String subscriptionPlanName;
     private String profilePhotoUrl;
     private String bio;
+    private String instagramUrl;
+    private String tiktokUrl;
+    private String youtubeUrl;
+    private String otherVideoPlatformUrl;
+    private String otherVideoPlatformLabel;
     private String slug;
     private boolean isPublic;
     private String identityDocumentType;
@@ -84,6 +89,11 @@ public class AthleteResponse {
             this.weightKg = athlete.getWeightKg();
             this.profilePhotoUrl = athlete.getProfilePhotoUrl();
             this.bio = athlete.getBio();
+            this.instagramUrl = athlete.getInstagramUrl();
+            this.tiktokUrl = athlete.getTiktokUrl();
+            this.youtubeUrl = athlete.getYoutubeUrl();
+            this.otherVideoPlatformUrl = athlete.getOtherVideoPlatformUrl();
+            this.otherVideoPlatformLabel = athlete.getOtherVideoPlatformLabel();
             this.slug = athlete.getSlug();
             this.isPublic = athlete.isPublic();
             this.identityDocumentType = athlete.getIdentityDocumentType();
