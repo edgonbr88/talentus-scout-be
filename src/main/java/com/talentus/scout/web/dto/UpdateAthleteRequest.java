@@ -42,5 +42,20 @@ public class UpdateAthleteRequest {
 
     private String bio;
 
+    @Size(max = 500)
+    private String instagramUrl;
+
+    @Size(max = 500)
+    private String tiktokUrl;
+
+    @Size(max = 500)
+    private String youtubeUrl;
+
+    @Size(max = 500)
+    private String otherVideoPlatformUrl;
+
+    @Size(max = 60)
+    private String otherVideoPlatformLabel;
+
     private Boolean isPublic;
 }

@@ -55,6 +55,28 @@ public class ScoutSecurity {
                 .map(ClubOrganization::getId);
     }
 
+    /**
+     * Verifica de forma no-lanzadora si el usuario autenticado es un ADMIN
+     * o un SCOUT con verificación APPROVED y cuenta ACTIVE.
+     */
+    @Transactional(readOnly = true)
+    public boolean isApprovedScoutOrAdmin(Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return false;
+        }
+        if (hasRole(authentication, "ADMIN")) {
+            return true;
+        }
+        if (!hasRole(authentication, "SCOUT")) {
+            return false;
+        }
+        return scoutProfileRepository.findByUserEmail(authentication.getName())
+                .map(profile -> profile.getVerificationStatus() == ScoutVerificationStatus.APPROVED
+                        && profile.getUser() != null
+                        && profile.getUser().getStatus() == AccountStatus.ACTIVE)
+                .orElse(false);
+    }
+
     @Transactional(readOnly = true)
     public boolean isVerifiedScout(Authentication authentication) {
         if (authentication == null || !authentication.isAuthenticated()) {

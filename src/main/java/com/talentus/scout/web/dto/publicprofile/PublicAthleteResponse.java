@@ -35,4 +35,5 @@ public class PublicAthleteResponse {
     private AthleteMetricsDto metrics;
     private List<PublicBadgeDto> badges;
     private List<PublicVideoDto> videos;
+    private PublicSocialLinksDto socialLinks;
 }
