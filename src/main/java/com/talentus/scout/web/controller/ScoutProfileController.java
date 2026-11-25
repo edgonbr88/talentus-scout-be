@@ -7,9 +7,13 @@ import com.talentus.scout.exception.ResourceNotFoundException;
 import com.talentus.scout.repository.ScoutProfileRepository;
 import com.talentus.scout.repository.UserRepository;
 import com.talentus.scout.service.ScoutAchievementService;
+import com.talentus.scout.service.ScoutProfileService;
 import com.talentus.scout.service.storage.FileStorageService;
 import com.talentus.scout.web.dto.CreateAthleteAchievementRequest;
 import com.talentus.scout.web.dto.publicprofile.PublicBadgeDto;
+import com.talentus.scout.web.dto.scoutnetwork.ScoutNetworkSettingsResponse;
+import com.talentus.scout.web.dto.scoutnetwork.ScoutPhotoResponse;
+import com.talentus.scout.web.dto.scoutnetwork.UpdateScoutNetworkSettingsRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,8 +22,11 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -40,6 +47,7 @@ public class ScoutProfileController {
     private final ScoutProfileRepository scoutProfileRepository;
     private final FileStorageService fileStorageService;
     private final ScoutAchievementService scoutAchievementService;
+    private final ScoutProfileService scoutProfileService;
 
     private static final List<String> ALLOWED_EXTENSIONS = List.of(".pdf", ".png", ".jpg", ".jpeg");
     private static final long MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
@@ -99,5 +107,36 @@ public class ScoutProfileController {
     ) {
         PublicBadgeDto createdBadge = scoutAchievementService.registerClubAchievement(athleteId, request, authentication);
         return ResponseEntity.status(HttpStatus.CREATED).body(createdBadge);
+    }
+
+    @GetMapping("/profile/network-settings")
+    @PreAuthorize("hasRole('SCOUT') and @scoutSecurity.isVerifiedScout(authentication)")
+    public ResponseEntity<ScoutNetworkSettingsResponse> getNetworkSettings(Authentication authentication) {
+        return ResponseEntity.ok(scoutProfileService.getNetworkSettings(authentication.getName()));
+    }
+
+    @PutMapping("/profile/network-settings")
+    @PreAuthorize("hasRole('SCOUT') and @scoutSecurity.isVerifiedScout(authentication)")
+    public ResponseEntity<ScoutNetworkSettingsResponse> updateNetworkSettings(
+            @Valid @RequestBody UpdateScoutNetworkSettingsRequest request,
+            Authentication authentication
+    ) {
+        return ResponseEntity.ok(scoutProfileService.updateNetworkSettings(authentication.getName(), request));
+    }
+
+    @PostMapping(value = "/profile/photo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasRole('SCOUT') and @scoutSecurity.isVerifiedScout(authentication)")
+    public ResponseEntity<ScoutPhotoResponse> uploadPublicPhoto(
+            @RequestParam("file") MultipartFile file,
+            Authentication authentication
+    ) {
+        return ResponseEntity.ok(scoutProfileService.uploadPublicPhoto(authentication.getName(), file));
+    }
+
+    @DeleteMapping("/profile/photo")
+    @PreAuthorize("hasRole('SCOUT') and @scoutSecurity.isVerifiedScout(authentication)")
+    public ResponseEntity<Void> deletePublicPhoto(Authentication authentication) {
+        scoutProfileService.deletePublicPhoto(authentication.getName());
+        return ResponseEntity.noContent().build();
     }
 }

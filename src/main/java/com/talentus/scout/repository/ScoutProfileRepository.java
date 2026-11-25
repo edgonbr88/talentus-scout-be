@@ -5,6 +5,7 @@ import com.talentus.scout.domain.enums.ScoutVerificationStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -15,7 +16,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Repository
-public interface ScoutProfileRepository extends JpaRepository<ScoutProfile, UUID> {
+public interface ScoutProfileRepository extends JpaRepository<ScoutProfile, UUID>, JpaSpecificationExecutor<ScoutProfile> {
 
     Optional<ScoutProfile> findByUserId(UUID userId);
 
@@ -39,5 +40,14 @@ public interface ScoutProfileRepository extends JpaRepository<ScoutProfile, UUID
            "LOWER(s.organizationName) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
            "LOWER(s.scoutRole) LIKE LOWER(CONCAT('%', :query, '%')))")
     Page<ScoutProfile> searchScouts(@Param("query") String query, Pageable pageable);
+    @Query("SELECT s FROM ScoutProfile s JOIN FETCH s.user u " +
+           "WHERE s.verificationStatus = :verificationStatus " +
+           "AND s.showInNetwork = true " +
+           "AND u.status = :accountStatus " +
+           "AND u.deletedAt IS NULL")
+    List<ScoutProfile> findAllVisibleInNetwork(
+            @Param("verificationStatus") ScoutVerificationStatus verificationStatus,
+            @Param("accountStatus") com.talentus.scout.domain.enums.AccountStatus accountStatus
+    );
 }
 
